@@ -21,6 +21,7 @@ import json, random, argparse, string
 from datetime import datetime
 from collections import defaultdict
 
+from name_corpus import build_korean_name_mutations, load_tagged_name_records
 from korean_pii_fuzzer_v4 import (
     get_all_kr_names, get_tier, Mut, _rint, _rchoice,
     gen_rrn, gen_alien, gen_card, gen_biz_reg, gen_device_id, gen_vin, gen_us_ssn,
@@ -283,21 +284,91 @@ DOMAIN_TEMPLATES = {
 # ═══════════════════════════════════════════════════════════════════════
 
 class OutputFuzzerV4:
-    def __init__(self):
-        self.names = get_all_kr_names()
+    def __init__(self, name_corpus_path=None, name_sampling="random"):
+        self.name_corpus_source = name_corpus_path or "legacy_embedded"
+        self.name_sampling = name_sampling
+        self.name_records = self._load_name_records(name_corpus_path)
+        self.names = [rec["full_name"] for rec in self.name_records]
+
         self.payloads = []
         self.n = 0
         self.dropped_duplicate = 0
         self._seen = set()
 
-    def _add(self, pii_type, level, mutation, original, mutated, tier,
-             domain, style, response_length, response_format, pii_count, vg,
-             contains_partial_mask=False, bundle_types=None):
+        self._tier_buckets = defaultdict(list)
+        for rec in self.name_records:
+            self._tier_buckets[rec.get("primary_tier", "T1_common_baseline")].append(rec)
+        self._tier_order = sorted(self._tier_buckets.keys())
+        self._tier_cursor = 0
+
+    def _load_name_records(self, name_corpus_path):
+        if name_corpus_path:
+            try:
+                records = load_tagged_name_records(name_corpus_path)
+                if records:
+                    return records
+                self.name_corpus_source = "legacy_embedded"
+            except FileNotFoundError:
+                print(f"[WARN] name corpus not found: {name_corpus_path}. falling back to embedded names.")
+                self.name_corpus_source = "legacy_embedded"
+            except json.JSONDecodeError:
+                print(f"[WARN] name corpus parse failed: {name_corpus_path}. falling back to embedded names.")
+                self.name_corpus_source = "legacy_embedded"
+
+        records = []
+        for idx, name in enumerate(get_all_kr_names(), start=1):
+            tier = get_tier(name)
+            records.append(
+                {
+                    "name_id": f"legacy_{idx:06d}",
+                    "full_name": name,
+                    "primary_tier": tier,
+                    "name_tags": [f"legacy_{tier}"],
+                }
+            )
+        return records
+
+    def _pick_name_record(self):
+        if self.name_sampling == "stratified" and self._tier_order:
+            tier = self._tier_order[self._tier_cursor % len(self._tier_order)]
+            self._tier_cursor += 1
+            bucket = self._tier_buckets.get(tier, [])
+            if bucket:
+                return _rchoice(bucket)
+        return _rchoice(self.name_records)
+
+    def _add(
+        self,
+        pii_type,
+        level,
+        mutation,
+        original,
+        mutated,
+        tier,
+        domain,
+        style,
+        response_length,
+        response_format,
+        pii_count,
+        vg,
+        contains_partial_mask=False,
+        bundle_types=None,
+        name_id="",
+        name_tags=None,
+        original_name="",
+        mutated_name="",
+        mutation_tags=None,
+    ):
         key = (pii_type, mutation, mutated[:200])
         if key in self._seen:
             self.dropped_duplicate += 1
             return
         self._seen.add(key)
+
+        if name_tags is None:
+            name_tags = []
+        if mutation_tags is None:
+            mutation_tags = [mutation]
 
         self.payloads.append({
             "id": f"O-{pii_type[:4].upper()}-{level}-{self.n:05d}",
@@ -307,6 +378,11 @@ class OutputFuzzerV4:
             "original": original,
             "mutated": mutated,
             "name_tier": tier,
+            "name_id": name_id,
+            "name_tags": name_tags,
+            "original_name": original_name,
+            "mutated_name": mutated_name,
+            "mutation_tags": mutation_tags,
             "lang": "KR",
             "source": "OUTPUT",
             "output_style": style,
@@ -326,35 +402,80 @@ class OutputFuzzerV4:
 
     def _mutate_output(self, pii_type, pii_str, base, name, tier,
                        domain, style, resp_len, resp_fmt, pii_count, vg,
-                       partial_mask=False, bundle_types=None):
+                       partial_mask=False, bundle_types=None, name_record=None):
         s = str(pii_str)
         has_digits = any(c.isdigit() for c in s)
         has_dash = "-" in s
         kw = dict(domain=domain, style=style, response_length=resp_len,
                   response_format=resp_fmt, pii_count=pii_count, vg=vg,
                   contains_partial_mask=partial_mask, bundle_types=bundle_types)
+        name_id = name_record.get("name_id", "") if name_record else ""
+        name_tags = list(name_record.get("name_tags", [])) if name_record else []
 
         # L0
-        self._add(pii_type, 0, "original", pii_str, base, tier, **kw)
+        self._add(
+            pii_type,
+            0,
+            "original",
+            pii_str,
+            base,
+            tier,
+            **kw,
+            name_id=name_id,
+            name_tags=name_tags,
+            original_name=name,
+            mutated_name=name,
+        )
         # L1
         if name and name in base:
-            self._add(pii_type, 1, "jamo", pii_str, base.replace(name, Mut.jamo(name)), tier, **kw)
-            self._add(pii_type, 1, "choseong", pii_str, base.replace(name, Mut.choseong(name)), tier, **kw)
+            jamo_name = Mut.jamo(name)
+            choseong_name = Mut.choseong(name)
+            self._add(pii_type, 1, "jamo", pii_str, base.replace(name, jamo_name), tier, **kw, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=jamo_name)
+            self._add(pii_type, 1, "choseong", pii_str, base.replace(name, choseong_name), tier, **kw, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=choseong_name)
+            custom_record = name_record or {"full_name": name}
+            custom_level = {
+                "space_between_surname_given": 3,
+                "full_name_title_suffix": 4,
+                "surname_title": 4,
+                "surname_title_corporate": 4,
+                "surname_title_education": 4,
+                "surname_title_medical": 4,
+                "vocative_suffix": 4,
+                "title_suffix": 4,
+                "masked_name": 1,
+            }
+            for m in build_korean_name_mutations(custom_record):
+                m_name = m["mutation_name"]
+                m_name_value = m["mutated_name"]
+                self._add(
+                    pii_type,
+                    custom_level.get(m_name, 4),
+                    m_name,
+                    pii_str,
+                    base.replace(name, m_name_value),
+                    tier,
+                    **kw,
+                    name_id=name_id,
+                    name_tags=name_tags,
+                    original_name=name,
+                    mutated_name=m_name_value,
+                    mutation_tags=list(m.get("mutation_tags", [m_name])),
+                )
         if has_digits:
-            self._add(pii_type, 1, "fullwidth", pii_str, base.replace(s, Mut.fullwidth(s)), tier, **kw)
-            self._add(pii_type, 1, "homoglyph", pii_str, base.replace(s, Mut.homoglyph(s)), tier, **kw)
+            self._add(pii_type, 1, "fullwidth", pii_str, base.replace(s, Mut.fullwidth(s)), tier, **kw, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
+            self._add(pii_type, 1, "homoglyph", pii_str, base.replace(s, Mut.homoglyph(s)), tier, **kw, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
         # L2
         if has_digits:
-            self._add(pii_type, 2, "zwsp", pii_str, base.replace(s, Mut.zwsp(s)), tier, **kw)
-            self._add(pii_type, 2, "soft_hyphen", pii_str, base.replace(s, Mut.soft_hyphen(s)), tier, **kw)
+            self._add(pii_type, 2, "zwsp", pii_str, base.replace(s, Mut.zwsp(s)), tier, **kw, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
+            self._add(pii_type, 2, "soft_hyphen", pii_str, base.replace(s, Mut.soft_hyphen(s)), tier, **kw, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
         # L3
         if has_dash:
-            self._add(pii_type, 3, "sep_none", pii_str, base.replace(s, s.replace("-","")), tier, **kw)
-            self._add(pii_type, 3, "sep_space", pii_str, base.replace(s, s.replace("-"," ")), tier, **kw)
+            self._add(pii_type, 3, "sep_none", pii_str, base.replace(s, s.replace("-","")), tier, **kw, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
+            self._add(pii_type, 3, "sep_space", pii_str, base.replace(s, s.replace("-"," ")), tier, **kw, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
         # L4
         if has_digits:
-            self._add(pii_type, 4, "kr_digits", pii_str, base.replace(s, Mut.kr_digits(s)), tier, **kw)
-        self._add(pii_type, 4, "abbreviation", pii_str, Mut.abbreviation(base), tier, **kw)
+            self._add(pii_type, 4, "kr_digits", pii_str, base.replace(s, Mut.kr_digits(s)), tier, **kw, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
+        self._add(pii_type, 4, "abbreviation", pii_str, Mut.abbreviation(base), tier, **kw, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
 
     def generate_all(self, count=10):
         self.payloads = []; self.n = 0; self._seen = set(); self.dropped_duplicate = 0
@@ -363,8 +484,9 @@ class OutputFuzzerV4:
             templates = DOMAIN_TEMPLATES[domain]
 
             for _ in range(count):
-                name = _rchoice(self.names)
-                tier = get_tier(name)
+                name_record = self._pick_name_record()
+                name = name_record["full_name"]
+                tier = name_record.get("primary_tier", "T1_common_baseline")
                 bundle = bundle_gen(name)
 
                 # Add masked versions
@@ -417,7 +539,7 @@ class OutputFuzzerV4:
                     self._mutate_output(
                         domain + "_bundle", primary_pii, base, name, tier,
                         domain, style, resp_len, resp_fmt, pc,
-                        "mixed", partial, btypes
+                        "mixed", partial, btypes, name_record=name_record
                     )
 
         random.shuffle(self.payloads)
@@ -428,6 +550,7 @@ class OutputFuzzerV4:
              "by_type": defaultdict(int), "by_level": defaultdict(int),
              "by_mutation": defaultdict(int), "by_style": defaultdict(int),
              "by_domain": defaultdict(int), "by_tier": defaultdict(int),
+             "by_name_tag": defaultdict(int),
              "by_response_length": defaultdict(int), "by_response_format": defaultdict(int),
              "by_pii_count": defaultdict(int)}
         for p in self.payloads:
@@ -437,6 +560,8 @@ class OutputFuzzerV4:
             s["by_style"][p["output_style"]] += 1
             s["by_domain"][p["output_domain"]] += 1
             s["by_tier"][p.get("name_tier","")] += 1
+            for tag in p.get("name_tags", []):
+                s["by_name_tag"][tag] += 1
             s["by_response_length"][p["response_length"]] += 1
             s["by_response_format"][p["response_format"]] += 1
             s["by_pii_count"][str(p["pii_count"])] += 1
@@ -451,6 +576,9 @@ class OutputFuzzerV4:
                 "timestamp": datetime.now().isoformat(),
                 "total": len(self.payloads),
                 "dropped_duplicate": self.dropped_duplicate,
+                "name_corpus": len(self.names),
+                "name_corpus_source": self.name_corpus_source,
+                "name_sampling": self.name_sampling,
                 "styles": ["narrative","chatbot","json","rag","log","table","partial_mask"],
                 "domains": ["crm","healthcare","finance","hr"],
                 "json_types": ["json_flat","json_nested","json_array"],
@@ -469,14 +597,26 @@ def main():
     parser = argparse.ArgumentParser(description="Korean PII Output Fuzzer v4.0 (Final)")
     parser.add_argument("--count", type=int, default=10)
     parser.add_argument("--output", default=None)
+    parser.add_argument(
+        "--name-corpus",
+        default=None,
+        help="Optional JSONL name corpus with fields: full_name, primary_tier, name_tags",
+    )
+    parser.add_argument(
+        "--name-sampling",
+        choices=["random", "stratified"],
+        default="random",
+        help="Name sampling strategy when name corpus is loaded",
+    )
     args = parser.parse_args()
 
-    fz = OutputFuzzerV4()
+    fz = OutputFuzzerV4(name_corpus_path=args.name_corpus, name_sampling=args.name_sampling)
     payloads = fz.generate_all(count=args.count)
     st = fz.stats()
 
     print(f"\n{'='*70}")
     print(f"  Korean PII Output Fuzzer v4.0 (Final)")
+    print(f"  Name corpus source: {fz.name_corpus_source} | Sampling: {fz.name_sampling}")
     print(f"{'='*70}")
     print(f"\n  Total: {len(payloads):,}  |  Dropped dupes: {fz.dropped_duplicate}")
 
