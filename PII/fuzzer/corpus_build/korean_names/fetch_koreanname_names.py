@@ -20,6 +20,7 @@ from urllib.request import Request, urlopen
 
 
 BASE_URL = "https://koreanname.me"
+SOURCE_DIR = Path(__file__).resolve().parent / "raw"
 DEFAULT_USER_AGENT = (
     "korean-name-research/1.0 "
     "(low-rate public aggregate-data fetch; contact: replace-with-your-email)"
@@ -241,7 +242,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-pages", type=int, default=None, help="Optional request-count safety cap for testing.")
     parser.add_argument("--max-name-length", type=int, default=40)
     parser.add_argument("--stop-after-empty-lengths", type=int, default=3)
-    parser.add_argument("--names-out", type=Path, default=Path("korean_names.txt"))
+    parser.add_argument("--names-out", type=Path, default=SOURCE_DIR / "korean_names.txt")
     parser.add_argument("--csv-out", type=Path, default=None, help="Optional metadata CSV output path.")
     parser.add_argument("--no-verify-total", dest="verify_total", action="store_false")
     parser.add_argument("--strict-total", action="store_true", help="Exit non-zero if verification count differs.")

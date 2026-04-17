@@ -23,6 +23,7 @@ from datetime import datetime
 from collections import defaultdict
 
 from name_corpus import build_korean_name_mutations, load_tagged_name_records
+from address_corpus import build_expanded_address_mutation_records, load_tagged_address_records
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -651,11 +652,20 @@ class Mut:
 # ═══════════════════════════════════════════════════════════════════════
 
 class FuzzerV4:
-    def __init__(self, name_corpus_path=None, name_sampling="random"):
+    def __init__(
+        self,
+        name_corpus_path=None,
+        name_sampling="random",
+        address_corpus_path=None,
+        address_sampling="random",
+    ):
         self.name_corpus_source = name_corpus_path or "legacy_embedded"
         self.name_sampling = name_sampling
         self.name_records = self._load_name_records(name_corpus_path)
         self.names = [rec["full_name"] for rec in self.name_records]
+        self.address_corpus_source = address_corpus_path or "legacy_generator"
+        self.address_sampling = address_sampling
+        self.address_records = self._load_address_records(address_corpus_path)
 
         self.payloads = []
         self.n = 0
@@ -669,6 +679,12 @@ class FuzzerV4:
         self._tier_order = sorted(self._tier_buckets.keys())
         self._tier_cursor = 0
         self._tier_pick_counts = defaultdict(int)
+
+        self._address_buckets = defaultdict(list)
+        for rec in self.address_records:
+            self._address_buckets[rec.get("primary_tier", "A1_road_basic")].append(rec)
+        self._address_tier_order = sorted(self._address_buckets.keys())
+        self._address_tier_cursor = 0
 
     def _load_name_records(self, name_corpus_path):
         if name_corpus_path:
@@ -710,6 +726,33 @@ class FuzzerV4:
                     return _rchoice(bucket)
         return _rchoice(self.name_records)
 
+    def _load_address_records(self, address_corpus_path):
+        if address_corpus_path:
+            try:
+                records = load_tagged_address_records(address_corpus_path)
+                if records:
+                    return records
+                self.address_corpus_source = "legacy_generator"
+            except FileNotFoundError:
+                print(f"[WARN] address corpus not found: {address_corpus_path}. falling back to built-in generator.")
+                self.address_corpus_source = "legacy_generator"
+            except json.JSONDecodeError:
+                print(f"[WARN] address corpus parse failed: {address_corpus_path}. falling back to built-in generator.")
+                self.address_corpus_source = "legacy_generator"
+        return []
+
+    def _pick_address_record(self):
+        if not self.address_records:
+            return None
+        if self.address_sampling == "stratified" and self._address_tier_order:
+            for _ in range(len(self._address_tier_order)):
+                tier = self._address_tier_order[self._address_tier_cursor % len(self._address_tier_order)]
+                self._address_tier_cursor += 1
+                bucket = self._address_buckets.get(tier, [])
+                if bucket:
+                    return _rchoice(bucket)
+        return _rchoice(self.address_records)
+
     def _add(
         self,
         pii_type,
@@ -725,6 +768,13 @@ class FuzzerV4:
         original_name="",
         mutated_name="",
         mutation_tags=None,
+        address_id="",
+        address_tier="",
+        address_system="",
+        address_tags=None,
+        original_address="",
+        mutated_address="",
+        expected_action="",
     ):
         # Duplicate check
         key = (pii_type, mutation, mutated)
@@ -737,6 +787,8 @@ class FuzzerV4:
             name_tags = []
         if mutation_tags is None:
             mutation_tags = [mutation]
+        if address_tags is None:
+            address_tags = []
 
         self.payloads.append({
             "id": f"{pii_type[:4].upper()}-{level}-{self.n:05d}",
@@ -751,6 +803,13 @@ class FuzzerV4:
             "original_name": original_name,
             "mutated_name": mutated_name,
             "mutation_tags": mutation_tags,
+            "address_id": address_id,
+            "address_tier": address_tier,
+            "address_system": address_system,
+            "address_tags": address_tags,
+            "original_address": original_address,
+            "mutated_address": mutated_address,
+            "expected_action": expected_action,
             "lang": lang,
             "validity_group": vg,
             "format_valid": True,
@@ -855,6 +914,16 @@ class FuzzerV4:
             self._add(pid, 5, "ctx_json", pii, Mut.json_ctx(name, label, pii), tier, vg=vg, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
             self._add(pid, 5, "houyi", pii, Mut.houyi(_rchoice(Mut.HOUYI_FW), base), tier, vg=vg, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
 
+    @staticmethod
+    def _address_mutation_level(mutation_name):
+        if mutation_name == "official":
+            return 0
+        if mutation_name.startswith("context_"):
+            return 5
+        if mutation_name in {"remove_comma", "remove_spaces", "compact_building_no", "jibun_beonji_suffix"}:
+            return 3
+        return 4
+
     def generate_all(self, count=10):
         self.payloads = []; self.n = 0; self._seen = set()
         self.dropped_invalid = 0; self.dropped_duplicate = 0
@@ -912,6 +981,43 @@ class FuzzerV4:
                             mutation_tags=list(m.get("mutation_tags", [m_name])),
                         )
                 else:
+                    if pdef["id"] == "address" and self.address_records:
+                        address_record = self._pick_address_record()
+                        if address_record:
+                            expanded = build_expanded_address_mutation_records(
+                                [address_record],
+                                per_record=0,
+                                seed=_rint(0, 10**9),
+                            )
+                            if expanded:
+                                for addr_item in expanded:
+                                    addr_text = str(addr_item.get("mutated_address", "")).strip()
+                                    if not addr_text:
+                                        continue
+                                    addr_mutation = str(addr_item.get("mutation_name", "official"))
+                                    base = pdef["tpl"].format(name=name, pii=addr_text)
+                                    self._add(
+                                        pdef["id"],
+                                        self._address_mutation_level(addr_mutation),
+                                        addr_mutation,
+                                        str(addr_item.get("original_address", addr_text)),
+                                        base,
+                                        tier,
+                                        vg=vg,
+                                        name_id=name_id,
+                                        name_tags=name_tags,
+                                        original_name=name,
+                                        mutated_name=name,
+                                        mutation_tags=list(addr_item.get("mutation_tags", [addr_mutation])),
+                                        address_id=str(addr_item.get("address_id", "")),
+                                        address_tier=str(addr_item.get("address_tier", "")),
+                                        address_system=str(addr_item.get("address_system", "")),
+                                        address_tags=list(addr_item.get("address_tags", [])),
+                                        original_address=str(addr_item.get("original_address", addr_text)),
+                                        mutated_address=addr_text,
+                                        expected_action=str(addr_item.get("expected_action", "")),
+                                    )
+                                continue
                     pii = str(pdef["gen"]())
                     base = pdef["tpl"].format(name=name, pii=pii)
                     self._mutate(pdef["id"], pii, base, name, tier, pdef["label"], vg, name_record=name_record)
@@ -947,6 +1053,7 @@ class FuzzerV4:
              "by_type": defaultdict(int), "by_level": defaultdict(int),
              "by_mutation": defaultdict(int), "by_tier": defaultdict(int),
              "by_name_tag": defaultdict(int),
+             "by_address_tier": defaultdict(int), "by_address_tag": defaultdict(int),
              "by_lang": defaultdict(int), "by_cat": defaultdict(int),
              "by_validity_group": defaultdict(int)}
         for p in self.payloads:
@@ -956,6 +1063,10 @@ class FuzzerV4:
             s["by_tier"][p.get("name_tier","")] += 1
             for tag in p.get("name_tags", []):
                 s["by_name_tag"][tag] += 1
+            if p.get("address_tier"):
+                s["by_address_tier"][p.get("address_tier", "")] += 1
+            for tag in p.get("address_tags", []):
+                s["by_address_tag"][tag] += 1
             s["by_lang"][p.get("lang","KR")] += 1
             s["by_validity_group"][p.get("validity_group","format")] += 1
         for pd in PII_TYPES:
@@ -975,6 +1086,9 @@ class FuzzerV4:
                 "name_corpus": len(self.names),
                 "name_corpus_source": self.name_corpus_source,
                 "name_sampling": self.name_sampling,
+                "address_corpus": len(self.address_records),
+                "address_corpus_source": self.address_corpus_source,
+                "address_sampling": self.address_sampling,
                 "categories": len(set(p["cat"] for p in PII_TYPES)),
                 "validity_principle": "All PII seeds validated: checksum (Group A), format (Group B), semantic dictionary (Group C)",
                 "mutation_levels": {
@@ -1026,9 +1140,25 @@ def main():
         default="random",
         help="Name sampling strategy when name corpus is loaded",
     )
+    parser.add_argument(
+        "--address-corpus",
+        default=None,
+        help="Optional JSONL address corpus with fields: full_address, primary_tier, address_tags",
+    )
+    parser.add_argument(
+        "--address-sampling",
+        choices=["random", "stratified"],
+        default="random",
+        help="Address sampling strategy when address corpus is loaded",
+    )
     args = parser.parse_args()
 
-    fz = FuzzerV4(name_corpus_path=args.name_corpus, name_sampling=args.name_sampling)
+    fz = FuzzerV4(
+        name_corpus_path=args.name_corpus,
+        name_sampling=args.name_sampling,
+        address_corpus_path=args.address_corpus,
+        address_sampling=args.address_sampling,
+    )
     payloads = fz.generate_all(count=args.count)
     st = fz.stats()
 
@@ -1036,6 +1166,7 @@ def main():
     print(f"  Korean PII Guardrail Fuzzer v4.0 (Validity-First)")
     print(f"  Names: {len(fz.names)} | PII Types: {len(PII_TYPES)} | Categories: {len(set(p['cat'] for p in PII_TYPES))}")
     print(f"  Name corpus source: {fz.name_corpus_source} | Sampling: {fz.name_sampling}")
+    print(f"  Address corpus source: {fz.address_corpus_source} | Sampling: {fz.address_sampling}")
     print(f"{'='*70}")
     print(f"\n  Total payloads: {len(payloads):,}")
     print(f"  Dropped (invalid): {fz.dropped_invalid}")

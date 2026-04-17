@@ -14,6 +14,7 @@ from urllib.request import Request, urlopen
 
 
 BASE_URL = "https://koreanname.me"
+SOURCE_DIR = Path(__file__).resolve().parent / "raw"
 DEFAULT_USER_AGENT = (
     "korean-surname-research/1.0 "
     "(low-rate public aggregate-data fetch; contact: replace-with-your-email)"
@@ -89,8 +90,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--year", type=int, default=2015, help="Surname ranking year used by koreanname.me.")
     parser.add_argument("--delay", type=float, default=0.5, help="Seconds to wait between page requests.")
     parser.add_argument("--timeout", type=float, default=20.0)
-    parser.add_argument("--txt-out", type=Path, default=Path("korean_surnames.txt"))
-    parser.add_argument("--csv-out", type=Path, default=Path("korean_surnames.csv"))
+    parser.add_argument("--txt-out", type=Path, default=SOURCE_DIR / "korean_surnames.txt")
+    parser.add_argument("--csv-out", type=Path, default=SOURCE_DIR / "korean_surnames.csv")
     parser.add_argument("--user-agent", default=DEFAULT_USER_AGENT)
     return parser.parse_args()
 

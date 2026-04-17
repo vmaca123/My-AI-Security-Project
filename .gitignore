@@ -1,2 +1,6 @@
 __pycache__/
 *.py[cod]
+
+# Generated large artifacts (do not commit)
+PII/fuzzer/corpus_build/korean_addresses/raw/*.zip
+PII/fuzzer/data/*.jsonl

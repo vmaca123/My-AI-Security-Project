@@ -1,5 +1,12 @@
-﻿import argparse
+import argparse
+import sys
 from pathlib import Path
+
+FUZZER_DIR = Path(__file__).resolve().parents[2]
+SOURCE_DIR = Path(__file__).resolve().parent / "raw"
+
+if str(FUZZER_DIR) not in sys.path:
+    sys.path.insert(0, str(FUZZER_DIR))
 
 from name_corpus import (
     build_balanced_sample,
@@ -16,8 +23,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Build tagged Korean name corpus for stratified fuzzing."
     )
-    parser.add_argument("--names-txt", default="korean_names.txt")
-    parser.add_argument("--surnames-csv", default="korean_surnames.csv")
+    parser.add_argument("--names-txt", default=SOURCE_DIR / "korean_names.txt")
+    parser.add_argument("--surnames-csv", default=SOURCE_DIR / "korean_surnames.csv")
     parser.add_argument(
         "--output",
         default="PII/fuzzer/data/tagged_korean_names.jsonl",

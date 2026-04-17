@@ -1,0 +1,50 @@
+{
+  "total": 50000,
+  "by_primary_tier": {
+    "A1_road_basic": 5556,
+    "A2_road_detail": 5556,
+    "A3_jibun_basic": 5556,
+    "A4_jibun_detail": 5556,
+    "A5_postcode_road": 5556,
+    "A6_abbrev_noisy": 5555,
+    "A7_english_mixed": 5555,
+    "A8_building_named": 5555,
+    "A9_special_address": 5555
+  },
+  "by_system": {
+    "english": 2721,
+    "jibun": 11112,
+    "mixed": 2834,
+    "postcode": 5556,
+    "road": 22222,
+    "special": 5555
+  },
+  "top_tags": {
+    "precision_road_building": 33333,
+    "admin_full": 27778,
+    "has_building_number": 27778,
+    "has_postcode": 27778,
+    "has_road_name": 27778,
+    "system_road": 27778,
+    "has_detail": 11112,
+    "precision_unit": 11112,
+    "has_lot_number": 11112,
+    "precision_lot": 11112,
+    "system_jibun": 11112,
+    "has_building_name": 11111,
+    "postcode_prefix": 5556,
+    "admin_abbrev": 5555,
+    "compact_building_no": 5555,
+    "spacing_missing": 5555,
+    "script_latin": 5555,
+    "system_english": 5555,
+    "building_named": 5555,
+    "system_special": 5555,
+    "script_mixed": 2834,
+    "system_mixed": 2834,
+    "special_postbox": 2744,
+    "special_object": 2721,
+    "has_mountain_lot": 414,
+    "special_honor_road": 90
+  }
+}

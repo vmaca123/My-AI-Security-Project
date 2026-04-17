@@ -96,7 +96,9 @@
 - `surname_title_medical`이 특정 이름군에서 급락하는가?
 
 ## 파일 구성
-- 코퍼스 빌드: `PII/fuzzer/build_korean_name_corpus.py`
+- 이름 수집/빌드 과정: `PII/fuzzer/corpus_build/korean_names/`
+- 이름 원천 데이터: `PII/fuzzer/corpus_build/korean_names/raw/`
+- 코퍼스 빌드: `PII/fuzzer/corpus_build/korean_names/build_korean_name_corpus.py`
 - 코퍼스 유틸/변형: `PII/fuzzer/name_corpus.py`
 - 입력 퍼저: `PII/fuzzer/korean_pii_fuzzer_v4.py`
 - 출력 퍼저: `PII/fuzzer/korean_pii_output_fuzzer_v4.py`

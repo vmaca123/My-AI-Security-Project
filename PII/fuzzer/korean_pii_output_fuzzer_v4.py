@@ -22,6 +22,7 @@ from datetime import datetime
 from collections import defaultdict
 
 from name_corpus import build_korean_name_mutations, load_tagged_name_records
+from address_corpus import build_expanded_address_mutation_records, load_tagged_address_records
 from korean_pii_fuzzer_v4 import (
     get_all_kr_names, get_tier, Mut, _rint, _rchoice,
     gen_rrn, gen_alien, gen_card, gen_biz_reg, gen_device_id, gen_vin, gen_us_ssn,
@@ -284,11 +285,20 @@ DOMAIN_TEMPLATES = {
 # ═══════════════════════════════════════════════════════════════════════
 
 class OutputFuzzerV4:
-    def __init__(self, name_corpus_path=None, name_sampling="random"):
+    def __init__(
+        self,
+        name_corpus_path=None,
+        name_sampling="random",
+        address_corpus_path=None,
+        address_sampling="random",
+    ):
         self.name_corpus_source = name_corpus_path or "legacy_embedded"
         self.name_sampling = name_sampling
         self.name_records = self._load_name_records(name_corpus_path)
         self.names = [rec["full_name"] for rec in self.name_records]
+        self.address_corpus_source = address_corpus_path or "legacy_generator"
+        self.address_sampling = address_sampling
+        self.address_records = self._load_address_records(address_corpus_path)
 
         self.payloads = []
         self.n = 0
@@ -300,6 +310,12 @@ class OutputFuzzerV4:
             self._tier_buckets[rec.get("primary_tier", "T1_common_baseline")].append(rec)
         self._tier_order = sorted(self._tier_buckets.keys())
         self._tier_cursor = 0
+
+        self._address_buckets = defaultdict(list)
+        for rec in self.address_records:
+            self._address_buckets[rec.get("primary_tier", "A1_road_basic")].append(rec)
+        self._address_tier_order = sorted(self._address_buckets.keys())
+        self._address_tier_cursor = 0
 
     def _load_name_records(self, name_corpus_path):
         if name_corpus_path:
@@ -337,6 +353,32 @@ class OutputFuzzerV4:
                 return _rchoice(bucket)
         return _rchoice(self.name_records)
 
+    def _load_address_records(self, address_corpus_path):
+        if address_corpus_path:
+            try:
+                records = load_tagged_address_records(address_corpus_path)
+                if records:
+                    return records
+                self.address_corpus_source = "legacy_generator"
+            except FileNotFoundError:
+                print(f"[WARN] address corpus not found: {address_corpus_path}. falling back to built-in generator.")
+                self.address_corpus_source = "legacy_generator"
+            except json.JSONDecodeError:
+                print(f"[WARN] address corpus parse failed: {address_corpus_path}. falling back to built-in generator.")
+                self.address_corpus_source = "legacy_generator"
+        return []
+
+    def _pick_address_record(self):
+        if not self.address_records:
+            return None
+        if self.address_sampling == "stratified" and self._address_tier_order:
+            tier = self._address_tier_order[self._address_tier_cursor % len(self._address_tier_order)]
+            self._address_tier_cursor += 1
+            bucket = self._address_buckets.get(tier, [])
+            if bucket:
+                return _rchoice(bucket)
+        return _rchoice(self.address_records)
+
     def _add(
         self,
         pii_type,
@@ -358,6 +400,13 @@ class OutputFuzzerV4:
         original_name="",
         mutated_name="",
         mutation_tags=None,
+        address_id="",
+        address_tier="",
+        address_system="",
+        address_tags=None,
+        original_address="",
+        mutated_address="",
+        expected_action="",
     ):
         key = (pii_type, mutation, mutated[:200])
         if key in self._seen:
@@ -369,6 +418,8 @@ class OutputFuzzerV4:
             name_tags = []
         if mutation_tags is None:
             mutation_tags = [mutation]
+        if address_tags is None:
+            address_tags = []
 
         self.payloads.append({
             "id": f"O-{pii_type[:4].upper()}-{level}-{self.n:05d}",
@@ -383,6 +434,13 @@ class OutputFuzzerV4:
             "original_name": original_name,
             "mutated_name": mutated_name,
             "mutation_tags": mutation_tags,
+            "address_id": address_id,
+            "address_tier": address_tier,
+            "address_system": address_system,
+            "address_tags": address_tags,
+            "original_address": original_address,
+            "mutated_address": mutated_address,
+            "expected_action": expected_action,
             "lang": "KR",
             "source": "OUTPUT",
             "output_style": style,
@@ -402,13 +460,22 @@ class OutputFuzzerV4:
 
     def _mutate_output(self, pii_type, pii_str, base, name, tier,
                        domain, style, resp_len, resp_fmt, pii_count, vg,
-                       partial_mask=False, bundle_types=None, name_record=None):
+                       partial_mask=False, bundle_types=None, name_record=None, address_meta=None):
         s = str(pii_str)
         has_digits = any(c.isdigit() for c in s)
         has_dash = "-" in s
         kw = dict(domain=domain, style=style, response_length=resp_len,
                   response_format=resp_fmt, pii_count=pii_count, vg=vg,
                   contains_partial_mask=partial_mask, bundle_types=bundle_types)
+        addr_kw = {
+            "address_id": str(address_meta.get("address_id", "")) if address_meta else "",
+            "address_tier": str(address_meta.get("address_tier", "")) if address_meta else "",
+            "address_system": str(address_meta.get("address_system", "")) if address_meta else "",
+            "address_tags": list(address_meta.get("address_tags", [])) if address_meta else [],
+            "original_address": str(address_meta.get("original_address", "")) if address_meta else "",
+            "mutated_address": str(address_meta.get("mutated_address", "")) if address_meta else "",
+            "expected_action": str(address_meta.get("expected_action", "")) if address_meta else "",
+        }
         name_id = name_record.get("name_id", "") if name_record else ""
         name_tags = list(name_record.get("name_tags", [])) if name_record else []
 
@@ -421,6 +488,7 @@ class OutputFuzzerV4:
             base,
             tier,
             **kw,
+            **addr_kw,
             name_id=name_id,
             name_tags=name_tags,
             original_name=name,
@@ -430,8 +498,8 @@ class OutputFuzzerV4:
         if name and name in base:
             jamo_name = Mut.jamo(name)
             choseong_name = Mut.choseong(name)
-            self._add(pii_type, 1, "jamo", pii_str, base.replace(name, jamo_name), tier, **kw, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=jamo_name)
-            self._add(pii_type, 1, "choseong", pii_str, base.replace(name, choseong_name), tier, **kw, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=choseong_name)
+            self._add(pii_type, 1, "jamo", pii_str, base.replace(name, jamo_name), tier, **kw, **addr_kw, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=jamo_name)
+            self._add(pii_type, 1, "choseong", pii_str, base.replace(name, choseong_name), tier, **kw, **addr_kw, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=choseong_name)
             custom_record = name_record or {"full_name": name}
             custom_level = {
                 "space_between_surname_given": 3,
@@ -455,6 +523,7 @@ class OutputFuzzerV4:
                     base.replace(name, m_name_value),
                     tier,
                     **kw,
+                    **addr_kw,
                     name_id=name_id,
                     name_tags=name_tags,
                     original_name=name,
@@ -462,20 +531,20 @@ class OutputFuzzerV4:
                     mutation_tags=list(m.get("mutation_tags", [m_name])),
                 )
         if has_digits:
-            self._add(pii_type, 1, "fullwidth", pii_str, base.replace(s, Mut.fullwidth(s)), tier, **kw, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
-            self._add(pii_type, 1, "homoglyph", pii_str, base.replace(s, Mut.homoglyph(s)), tier, **kw, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
+            self._add(pii_type, 1, "fullwidth", pii_str, base.replace(s, Mut.fullwidth(s)), tier, **kw, **addr_kw, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
+            self._add(pii_type, 1, "homoglyph", pii_str, base.replace(s, Mut.homoglyph(s)), tier, **kw, **addr_kw, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
         # L2
         if has_digits:
-            self._add(pii_type, 2, "zwsp", pii_str, base.replace(s, Mut.zwsp(s)), tier, **kw, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
-            self._add(pii_type, 2, "soft_hyphen", pii_str, base.replace(s, Mut.soft_hyphen(s)), tier, **kw, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
+            self._add(pii_type, 2, "zwsp", pii_str, base.replace(s, Mut.zwsp(s)), tier, **kw, **addr_kw, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
+            self._add(pii_type, 2, "soft_hyphen", pii_str, base.replace(s, Mut.soft_hyphen(s)), tier, **kw, **addr_kw, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
         # L3
         if has_dash:
-            self._add(pii_type, 3, "sep_none", pii_str, base.replace(s, s.replace("-","")), tier, **kw, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
-            self._add(pii_type, 3, "sep_space", pii_str, base.replace(s, s.replace("-"," ")), tier, **kw, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
+            self._add(pii_type, 3, "sep_none", pii_str, base.replace(s, s.replace("-","")), tier, **kw, **addr_kw, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
+            self._add(pii_type, 3, "sep_space", pii_str, base.replace(s, s.replace("-"," ")), tier, **kw, **addr_kw, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
         # L4
         if has_digits:
-            self._add(pii_type, 4, "kr_digits", pii_str, base.replace(s, Mut.kr_digits(s)), tier, **kw, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
-        self._add(pii_type, 4, "abbreviation", pii_str, Mut.abbreviation(base), tier, **kw, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
+            self._add(pii_type, 4, "kr_digits", pii_str, base.replace(s, Mut.kr_digits(s)), tier, **kw, **addr_kw, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
+        self._add(pii_type, 4, "abbreviation", pii_str, Mut.abbreviation(base), tier, **kw, **addr_kw, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
 
     def generate_all(self, count=10):
         self.payloads = []; self.n = 0; self._seen = set(); self.dropped_duplicate = 0
@@ -487,7 +556,31 @@ class OutputFuzzerV4:
                 name_record = self._pick_name_record()
                 name = name_record["full_name"]
                 tier = name_record.get("primary_tier", "T1_common_baseline")
+                address_value = ""
+                address_meta = None
+                address_record = self._pick_address_record()
+                if address_record:
+                    expanded = build_expanded_address_mutation_records(
+                        [address_record],
+                        per_record=0,
+                        seed=_rint(0, 10**9),
+                    )
+                    if expanded:
+                        picked = _rchoice(expanded)
+                        address_value = str(picked.get("mutated_address", "")).strip()
+                        if address_value:
+                            address_meta = {
+                                "address_id": str(picked.get("address_id", "")),
+                                "address_tier": str(picked.get("address_tier", "")),
+                                "address_system": str(picked.get("address_system", "")),
+                                "address_tags": list(picked.get("address_tags", [])),
+                                "original_address": str(picked.get("original_address", "")),
+                                "mutated_address": address_value,
+                                "expected_action": str(picked.get("expected_action", "")),
+                            }
                 bundle = bundle_gen(name)
+                if address_value and "addr" in bundle:
+                    bundle["addr"] = address_value
 
                 # Add masked versions
                 bundle["phone_masked"] = _partial_mask(bundle.get("phone",""))
@@ -539,7 +632,11 @@ class OutputFuzzerV4:
                     self._mutate_output(
                         domain + "_bundle", primary_pii, base, name, tier,
                         domain, style, resp_len, resp_fmt, pc,
-                        "mixed", partial, btypes, name_record=name_record
+                        "mixed",
+                        partial,
+                        btypes,
+                        name_record=name_record,
+                        address_meta=address_meta if address_value and address_value in base else None,
                     )
 
         random.shuffle(self.payloads)
@@ -551,6 +648,7 @@ class OutputFuzzerV4:
              "by_mutation": defaultdict(int), "by_style": defaultdict(int),
              "by_domain": defaultdict(int), "by_tier": defaultdict(int),
              "by_name_tag": defaultdict(int),
+             "by_address_tier": defaultdict(int), "by_address_tag": defaultdict(int),
              "by_response_length": defaultdict(int), "by_response_format": defaultdict(int),
              "by_pii_count": defaultdict(int)}
         for p in self.payloads:
@@ -562,6 +660,10 @@ class OutputFuzzerV4:
             s["by_tier"][p.get("name_tier","")] += 1
             for tag in p.get("name_tags", []):
                 s["by_name_tag"][tag] += 1
+            if p.get("address_tier"):
+                s["by_address_tier"][p.get("address_tier", "")] += 1
+            for tag in p.get("address_tags", []):
+                s["by_address_tag"][tag] += 1
             s["by_response_length"][p["response_length"]] += 1
             s["by_response_format"][p["response_format"]] += 1
             s["by_pii_count"][str(p["pii_count"])] += 1
@@ -579,6 +681,9 @@ class OutputFuzzerV4:
                 "name_corpus": len(self.names),
                 "name_corpus_source": self.name_corpus_source,
                 "name_sampling": self.name_sampling,
+                "address_corpus": len(self.address_records),
+                "address_corpus_source": self.address_corpus_source,
+                "address_sampling": self.address_sampling,
                 "styles": ["narrative","chatbot","json","rag","log","table","partial_mask"],
                 "domains": ["crm","healthcare","finance","hr"],
                 "json_types": ["json_flat","json_nested","json_array"],
@@ -608,15 +713,32 @@ def main():
         default="random",
         help="Name sampling strategy when name corpus is loaded",
     )
+    parser.add_argument(
+        "--address-corpus",
+        default=None,
+        help="Optional JSONL address corpus with fields: full_address, primary_tier, address_tags",
+    )
+    parser.add_argument(
+        "--address-sampling",
+        choices=["random", "stratified"],
+        default="random",
+        help="Address sampling strategy when address corpus is loaded",
+    )
     args = parser.parse_args()
 
-    fz = OutputFuzzerV4(name_corpus_path=args.name_corpus, name_sampling=args.name_sampling)
+    fz = OutputFuzzerV4(
+        name_corpus_path=args.name_corpus,
+        name_sampling=args.name_sampling,
+        address_corpus_path=args.address_corpus,
+        address_sampling=args.address_sampling,
+    )
     payloads = fz.generate_all(count=args.count)
     st = fz.stats()
 
     print(f"\n{'='*70}")
     print(f"  Korean PII Output Fuzzer v4.0 (Final)")
     print(f"  Name corpus source: {fz.name_corpus_source} | Sampling: {fz.name_sampling}")
+    print(f"  Address corpus source: {fz.address_corpus_source} | Sampling: {fz.address_sampling}")
     print(f"{'='*70}")
     print(f"\n  Total: {len(payloads):,}  |  Dropped dupes: {fz.dropped_duplicate}")
 
