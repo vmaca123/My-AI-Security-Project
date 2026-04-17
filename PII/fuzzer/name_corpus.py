@@ -1,6 +1,7 @@
 ﻿import csv
 import json
 import random
+import re
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
@@ -345,16 +346,90 @@ def load_tagged_name_records(path: str) -> List[Dict[str, object]]:
     return records
 
 
-def load_name_seed_records(path: str) -> List[Dict[str, object]]:
-    rows: List[Dict[str, object]] = []
-    with Path(path).open("r", encoding="utf-8") as fp:
+_SEED_PART_PATTERN = re.compile(r"^(?P<base>.+)_part(?P<index>\d+)$")
+
+
+def _seed_path_sort_key(path: Path) -> Tuple[str, int, str]:
+    stem = path.stem
+    matched = _SEED_PART_PATTERN.match(stem)
+    if matched:
+        return matched.group("base"), int(matched.group("index")), path.name
+    return stem, 0, path.name
+
+
+def _dedupe_seed_paths(paths: Sequence[Path]) -> List[Path]:
+    unique: Dict[str, Path] = {}
+    for path in paths:
+        if not path.is_file():
+            continue
+        unique[str(path.resolve())] = path
+    return sorted(unique.values(), key=_seed_path_sort_key)
+
+
+def _resolve_seed_input_paths(path_spec: str) -> List[Path]:
+    target = Path(path_spec)
+    if target.is_dir():
+        resolved = _dedupe_seed_paths(list(target.glob("*.jsonl")) + list(target.glob("*.json")))
+        if resolved:
+            return resolved
+        raise FileNotFoundError(path_spec)
+
+    if target.is_file():
+        matched = _SEED_PART_PATTERN.match(target.stem)
+        if matched:
+            base_stem = matched.group("base")
+            base_path = target.with_name(f"{base_stem}{target.suffix}")
+            candidates = list(target.parent.glob(f"{base_stem}_part*{target.suffix}"))
+            if base_path.is_file():
+                candidates.append(base_path)
+            resolved = _dedupe_seed_paths(candidates)
+            if resolved:
+                return resolved
+            return [target]
+
+        part_candidates = _dedupe_seed_paths(list(target.parent.glob(f"{target.stem}_part*{target.suffix}")))
+        if part_candidates:
+            return _dedupe_seed_paths([target] + part_candidates)
+        return [target]
+
+    suffix = target.suffix or ".jsonl"
+    stem = target.stem if target.suffix else target.name
+    part_only = _dedupe_seed_paths(list(target.parent.glob(f"{stem}_part*{suffix}")))
+    if part_only:
+        return part_only
+    raise FileNotFoundError(path_spec)
+
+
+def _iter_seed_items(path: Path) -> Iterable[Dict[str, object]]:
+    if path.suffix.lower() == ".json":
+        with path.open("r", encoding="utf-8") as fp:
+            payload = json.load(fp)
+        if isinstance(payload, list):
+            for item in payload:
+                if isinstance(item, dict):
+                    yield item
+        elif isinstance(payload, dict):
+            nested = payload.get("payloads")
+            if isinstance(nested, list):
+                for item in nested:
+                    if isinstance(item, dict):
+                        yield item
+        return
+
+    with path.open("r", encoding="utf-8") as fp:
         for line in fp:
             line = line.strip()
             if not line:
                 continue
             item = json.loads(line)
-            if not isinstance(item, dict):
-                continue
+            if isinstance(item, dict):
+                yield item
+
+
+def load_name_seed_records(path: str) -> List[Dict[str, object]]:
+    rows: List[Dict[str, object]] = []
+    for input_path in _resolve_seed_input_paths(path):
+        for item in _iter_seed_items(input_path):
             seed_id = str(item.get("id", "")).strip()
             text = str(
                 item.get("text")

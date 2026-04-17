@@ -1243,7 +1243,7 @@ def main():
     parser.add_argument(
         "--name-seed",
         default=None,
-        help="Optional JSONL name seed queue with fields: id, text. Takes precedence over --name-corpus.",
+        help="Optional name seed input (.jsonl/.json or directory). Base path auto-loads split files (_partNNN). Takes precedence over --name-corpus.",
     )
     parser.add_argument(
         "--name-sampling",
@@ -1259,7 +1259,7 @@ def main():
     parser.add_argument(
         "--address-seed",
         default=None,
-        help="Optional JSONL address seed queue with fields: id, text. Takes precedence over --address-corpus.",
+        help="Optional address seed input (.jsonl/.json or directory). Base path auto-loads split files (_partNNN). Takes precedence over --address-corpus.",
     )
     parser.add_argument(
         "--address-sampling",

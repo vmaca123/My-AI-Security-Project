@@ -1,6 +1,8 @@
 import argparse
+import json
 import sys
 from pathlib import Path
+from typing import Dict, Iterable, List
 
 FUZZER_DIR = Path(__file__).resolve().parents[2]
 SOURCE_DIR = Path(__file__).resolve().parent / "raw"
@@ -18,6 +20,53 @@ from name_corpus import (
     write_jsonl,
     write_summary,
 )
+
+
+def _split_part_path(output_path: Path, index: int) -> Path:
+    if index <= 1:
+        return output_path
+    return output_path.with_name(f"{output_path.stem}_part{index:03d}{output_path.suffix}")
+
+
+def _cleanup_split_parts(output_path: Path) -> None:
+    for part_path in output_path.parent.glob(f"{output_path.stem}_part*{output_path.suffix}"):
+        if part_path.is_file():
+            part_path.unlink()
+
+
+def write_jsonl_with_split(records: Iterable[Dict[str, object]], output_path: str, max_bytes: int = 0) -> List[Path]:
+    output = Path(output_path)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    _cleanup_split_parts(output)
+
+    if max_bytes <= 0:
+        write_jsonl(records, str(output))
+        return [output]
+
+    written_files: List[Path] = []
+    part_index = 1
+    current_path = _split_part_path(output, part_index)
+    current_size = 0
+    current_fp = current_path.open("w", encoding="utf-8")
+    written_files.append(current_path)
+
+    try:
+        for row in records:
+            line = json.dumps(row, ensure_ascii=False) + "\n"
+            line_size = len(line.encode("utf-8"))
+            if current_size > 0 and current_size + line_size > max_bytes:
+                current_fp.close()
+                part_index += 1
+                current_path = _split_part_path(output, part_index)
+                current_fp = current_path.open("w", encoding="utf-8")
+                written_files.append(current_path)
+                current_size = 0
+            current_fp.write(line)
+            current_size += line_size
+    finally:
+        current_fp.close()
+
+    return written_files
 
 
 def parse_args() -> argparse.Namespace:
@@ -69,6 +118,12 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=12,
         help="Max number of expanded mutation entries per base record (<=0 means all)",
+    )
+    parser.add_argument(
+        "--name-seed-max-file-mb",
+        type=float,
+        default=45.0,
+        help="Max size per name seed output file in MiB (<=0 disables split)",
     )
     parser.add_argument("--seed", type=int, default=42)
     return parser.parse_args()
@@ -134,8 +189,17 @@ def main() -> int:
                 "synthetic": True,
             }
         )
-    write_jsonl(seed_queue, args.name_seed_out)
-    print(f"name seed queue saved: {len(seed_queue):,} records -> {args.name_seed_out}")
+    seed_max_bytes = int(args.name_seed_max_file_mb * 1024 * 1024) if args.name_seed_max_file_mb > 0 else 0
+    seed_files = write_jsonl_with_split(seed_queue, args.name_seed_out, max_bytes=seed_max_bytes)
+    if len(seed_files) == 1:
+        print(f"name seed queue saved: {len(seed_queue):,} records -> {seed_files[0]}")
+    else:
+        print(
+            f"name seed queue saved: {len(seed_queue):,} records "
+            f"-> {len(seed_files)} files (max {args.name_seed_max_file_mb} MiB each)"
+        )
+        for path in seed_files:
+            print(f"  - {path}")
 
     return 0
 
