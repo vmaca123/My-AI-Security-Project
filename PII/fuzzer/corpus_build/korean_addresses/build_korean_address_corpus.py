@@ -12,6 +12,7 @@ from address_corpus import (
     build_balanced_address_sample,
     build_expanded_address_mutation_records,
     build_tagged_address_records,
+    load_tagged_address_records,
     summarize_address_records,
     write_jsonl,
     write_summary,
@@ -23,6 +24,11 @@ def parse_args() -> argparse.Namespace:
         description="Build tagged Korean address corpus and mutation-expanded payload seeds."
     )
     parser.add_argument("--raw-dir", default=SOURCE_DIR, help="Directory that contains raw address zip files")
+    parser.add_argument(
+        "--input-tagged",
+        default="",
+        help="Optional tagged address JSONL input. If set, skip raw ZIP parsing and reuse this tagged corpus.",
+    )
     parser.add_argument(
         "--output",
         default="PII/fuzzer/data/tagged_korean_addresses.jsonl",
@@ -68,11 +74,17 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
 
-    base_records = build_tagged_address_records(
-        raw_dir=str(Path(args.raw_dir)),
-        seed=args.seed,
-        max_records=args.max_base_records,
-    )
+    if args.input_tagged:
+        base_records = load_tagged_address_records(args.input_tagged)
+        if args.max_base_records > 0:
+            base_records = base_records[: args.max_base_records]
+        print(f"loaded tagged address corpus: {len(base_records):,} records <- {args.input_tagged}")
+    else:
+        base_records = build_tagged_address_records(
+            raw_dir=str(Path(args.raw_dir)),
+            seed=args.seed,
+            max_records=args.max_base_records,
+        )
     write_jsonl(base_records, args.output)
 
     summary = summarize_address_records(base_records)

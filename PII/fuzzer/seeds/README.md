@@ -16,6 +16,7 @@ PII/fuzzer/seeds/address/address_input_queue_{source_yyyymm}_{version}.jsonl
 
 ```text
 PII/fuzzer/seeds/address/address_input_queue_202603_v1.jsonl
+PII/fuzzer/seeds/address/address_input_queue_202603_v2.jsonl
 ```
 
 실행 예:
@@ -23,6 +24,10 @@ PII/fuzzer/seeds/address/address_input_queue_202603_v1.jsonl
 ```bash
 python PII/fuzzer/korean_pii_fuzzer_v4.py --address-seed PII/fuzzer/seeds/address/address_input_queue_202603_v1.jsonl
 python PII/fuzzer/korean_pii_output_fuzzer_v4.py --address-seed PII/fuzzer/seeds/address/address_input_queue_202603_v1.jsonl
+
+python PII/fuzzer/korean_pii_fuzzer_v4.py --address-seed PII/fuzzer/seeds/address/address_input_queue_202603_v2.jsonl
+python PII/fuzzer/korean_pii_output_fuzzer_v4.py --address-seed PII/fuzzer/seeds/address/address_input_queue_202603_v2.jsonl
 ```
 
 `--address-seed`는 `id`, `text` 필드를 가진 JSONL 파일을 읽는다. `--address-corpus`도 함께 지정하면 `--address-seed`가 우선 사용된다.
+`v2` seed는 기존 주소 변형에 더해 한국어 주소 변형(`address_choseong`, `address_jamo`, `address_kr_digits`, `address_zwsp`, `address_unit_space_noise`)까지 포함한다.

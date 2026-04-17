@@ -1,5 +1,6 @@
 import json
 import random
+import re
 import zipfile
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -43,6 +44,51 @@ CONTEXT_PREFIXES = {
     "context_customer_record": "고객 주소지: ",
 }
 
+HANGUL_CHO = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ"
+HANGUL_JUNG = "ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ"
+HANGUL_JONG = [
+    "",
+    "ㄱ",
+    "ㄲ",
+    "ㄳ",
+    "ㄴ",
+    "ㄵ",
+    "ㄶ",
+    "ㄷ",
+    "ㄹ",
+    "ㄺ",
+    "ㄻ",
+    "ㄼ",
+    "ㄽ",
+    "ㄾ",
+    "ㄿ",
+    "ㅀ",
+    "ㅁ",
+    "ㅂ",
+    "ㅄ",
+    "ㅅ",
+    "ㅆ",
+    "ㅇ",
+    "ㅈ",
+    "ㅊ",
+    "ㅋ",
+    "ㅌ",
+    "ㅍ",
+    "ㅎ",
+]
+KOR_DIGIT_WORDS = {
+    "0": "공",
+    "1": "일",
+    "2": "이",
+    "3": "삼",
+    "4": "사",
+    "5": "오",
+    "6": "육",
+    "7": "칠",
+    "8": "팔",
+    "9": "구",
+}
+
 
 def _find_zip(raw_dir: Path, keyword: str) -> Optional[Path]:
     candidates = sorted([p for p in raw_dir.glob("*.zip") if keyword in p.name], key=lambda p: p.name)
@@ -58,6 +104,60 @@ def _decode_line(raw: bytes) -> str:
         except UnicodeDecodeError:
             continue
     return ""
+
+
+def _is_hangul_syllable(ch: str) -> bool:
+    if not ch:
+        return False
+    code = ord(ch)
+    return 0xAC00 <= code <= 0xD7A3
+
+
+def _address_jamo(text: str) -> str:
+    out: List[str] = []
+    for ch in text:
+        if not _is_hangul_syllable(ch):
+            out.append(ch)
+            continue
+        offset = ord(ch) - 0xAC00
+        cho = HANGUL_CHO[offset // (21 * 28)]
+        jung = HANGUL_JUNG[(offset % (21 * 28)) // 28]
+        jong = HANGUL_JONG[offset % 28]
+        out.append(cho + jung + jong)
+    return "".join(out)
+
+
+def _address_choseong(text: str) -> str:
+    out: List[str] = []
+    for ch in text:
+        if not _is_hangul_syllable(ch):
+            out.append(ch)
+            continue
+        offset = ord(ch) - 0xAC00
+        out.append(HANGUL_CHO[offset // (21 * 28)])
+    return "".join(out)
+
+
+def _address_kr_digits(text: str) -> str:
+    return "".join(KOR_DIGIT_WORDS.get(ch, ch) for ch in text)
+
+
+def _address_zwsp(text: str) -> str:
+    out: List[str] = []
+    for idx, ch in enumerate(text):
+        out.append(ch)
+        if ch == " ":
+            continue
+        if ch.isdigit() or (_is_hangul_syllable(ch) and idx % 2 == 1):
+            out.append("\u200b")
+    return "".join(out).rstrip("\u200b")
+
+
+def _address_unit_space_noise(text: str) -> str:
+    value = re.sub(r"(\d)\s+(번길|길|로|번지|동|층|호)", r"\1\2", text)
+    value = re.sub(r"(번길|길|로|번지|동|층|호)(\d)", r"\1 \2", value)
+    value = re.sub(r"([가-힣])\s+(동|리|면|읍)\b", r"\1\2", value)
+    return value
 
 
 def _iter_zip_rows(zip_path: Path, member_prefixes: Sequence[str]) -> Iterable[Tuple[str, List[str]]]:
@@ -931,6 +1031,16 @@ def build_korean_address_mutations(record: Dict[str, object]) -> List[Dict[str, 
 
     if address_system == "jibun" and "번지" not in full and any(ch.isdigit() for ch in full):
         add("jibun_beonji_suffix", f"{full}번지", ["jibun_beonji_suffix"])
+
+    add("address_choseong", _address_choseong(full), ["address_linguistic", "choseong"])
+    add("address_jamo", _address_jamo(full), ["address_linguistic", "jamo"])
+    add("address_kr_digits", _address_kr_digits(full), ["address_linguistic", "kr_digits"])
+    add("address_zwsp", _address_zwsp(full), ["address_linguistic", "zero_width"])
+    add(
+        "address_unit_space_noise",
+        _address_unit_space_noise(full),
+        ["address_linguistic", "unit_spacing_noise"],
+    )
 
     for m_name, prefix in CONTEXT_PREFIXES.items():
         add(m_name, f"{prefix}{full}", [m_name, "contextual"])
