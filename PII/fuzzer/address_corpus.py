@@ -854,6 +854,30 @@ def load_tagged_address_records(path: str) -> List[Dict[str, object]]:
     return rows
 
 
+def load_address_seed_records(path: str) -> List[Dict[str, str]]:
+    rows: List[Dict[str, str]] = []
+    with Path(path).open("r", encoding="utf-8") as fp:
+        for line in fp:
+            line = line.strip()
+            if not line:
+                continue
+            item = json.loads(line)
+            if not isinstance(item, dict):
+                continue
+            seed_id = str(item.get("id", "")).strip()
+            text = str(
+                item.get("text")
+                or item.get("mutated")
+                or item.get("mutated_address")
+                or item.get("full_address")
+                or ""
+            ).strip()
+            if not text:
+                continue
+            rows.append({"id": seed_id, "text": text})
+    return rows
+
+
 def build_korean_address_mutations(record: Dict[str, object]) -> List[Dict[str, object]]:
     full = str(record.get("full_address", "")).strip()
     if not full:

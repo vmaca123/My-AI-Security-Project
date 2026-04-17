@@ -22,7 +22,7 @@ from datetime import datetime
 from collections import defaultdict
 
 from name_corpus import build_korean_name_mutations, load_tagged_name_records
-from address_corpus import build_expanded_address_mutation_records, load_tagged_address_records
+from address_corpus import build_expanded_address_mutation_records, load_address_seed_records, load_tagged_address_records
 from korean_pii_fuzzer_v4 import (
     get_all_kr_names, get_tier, Mut, _rint, _rchoice,
     gen_rrn, gen_alien, gen_card, gen_biz_reg, gen_device_id, gen_vin, gen_us_ssn,
@@ -290,6 +290,7 @@ class OutputFuzzerV4:
         name_corpus_path=None,
         name_sampling="random",
         address_corpus_path=None,
+        address_seed_path=None,
         address_sampling="random",
     ):
         self.name_corpus_source = name_corpus_path or "legacy_embedded"
@@ -297,7 +298,9 @@ class OutputFuzzerV4:
         self.name_records = self._load_name_records(name_corpus_path)
         self.names = [rec["full_name"] for rec in self.name_records]
         self.address_corpus_source = address_corpus_path or "legacy_generator"
+        self.address_seed_source = address_seed_path or ""
         self.address_sampling = address_sampling
+        self.address_seed_records = self._load_address_seed_records(address_seed_path)
         self.address_records = self._load_address_records(address_corpus_path)
 
         self.payloads = []
@@ -367,6 +370,26 @@ class OutputFuzzerV4:
                 print(f"[WARN] address corpus parse failed: {address_corpus_path}. falling back to built-in generator.")
                 self.address_corpus_source = "legacy_generator"
         return []
+
+    def _load_address_seed_records(self, address_seed_path):
+        if address_seed_path:
+            try:
+                records = load_address_seed_records(address_seed_path)
+                if records:
+                    return records
+                self.address_seed_source = ""
+            except FileNotFoundError:
+                print(f"[WARN] address seed not found: {address_seed_path}. falling back to corpus/built-in generator.")
+                self.address_seed_source = ""
+            except json.JSONDecodeError:
+                print(f"[WARN] address seed parse failed: {address_seed_path}. falling back to corpus/built-in generator.")
+                self.address_seed_source = ""
+        return []
+
+    def _pick_address_seed_record(self):
+        if not self.address_seed_records:
+            return None
+        return _rchoice(self.address_seed_records)
 
     def _pick_address_record(self):
         if not self.address_records:
@@ -558,7 +581,20 @@ class OutputFuzzerV4:
                 tier = name_record.get("primary_tier", "T1_common_baseline")
                 address_value = ""
                 address_meta = None
-                address_record = self._pick_address_record()
+                address_seed = self._pick_address_seed_record()
+                if address_seed:
+                    address_value = str(address_seed.get("text", "")).strip()
+                    if address_value:
+                        address_meta = {
+                            "address_id": str(address_seed.get("id", "")),
+                            "address_tier": "seed_queue",
+                            "address_system": "seed",
+                            "address_tags": ["seed_queue"],
+                            "original_address": address_value,
+                            "mutated_address": address_value,
+                            "expected_action": "maybe_mask",
+                        }
+                address_record = None if address_value else self._pick_address_record()
                 if address_record:
                     expanded = build_expanded_address_mutation_records(
                         [address_record],
@@ -683,6 +719,8 @@ class OutputFuzzerV4:
                 "name_sampling": self.name_sampling,
                 "address_corpus": len(self.address_records),
                 "address_corpus_source": self.address_corpus_source,
+                "address_seed": len(self.address_seed_records),
+                "address_seed_source": self.address_seed_source,
                 "address_sampling": self.address_sampling,
                 "styles": ["narrative","chatbot","json","rag","log","table","partial_mask"],
                 "domains": ["crm","healthcare","finance","hr"],
@@ -719,6 +757,11 @@ def main():
         help="Optional JSONL address corpus with fields: full_address, primary_tier, address_tags",
     )
     parser.add_argument(
+        "--address-seed",
+        default=None,
+        help="Optional JSONL address seed queue with fields: id, text. Takes precedence over --address-corpus.",
+    )
+    parser.add_argument(
         "--address-sampling",
         choices=["random", "stratified"],
         default="random",
@@ -730,6 +773,7 @@ def main():
         name_corpus_path=args.name_corpus,
         name_sampling=args.name_sampling,
         address_corpus_path=args.address_corpus,
+        address_seed_path=args.address_seed,
         address_sampling=args.address_sampling,
     )
     payloads = fz.generate_all(count=args.count)
@@ -739,6 +783,7 @@ def main():
     print(f"  Korean PII Output Fuzzer v4.0 (Final)")
     print(f"  Name corpus source: {fz.name_corpus_source} | Sampling: {fz.name_sampling}")
     print(f"  Address corpus source: {fz.address_corpus_source} | Sampling: {fz.address_sampling}")
+    print(f"  Address seed source: {fz.address_seed_source or 'none'} | Seeds: {len(fz.address_seed_records):,}")
     print(f"{'='*70}")
     print(f"\n  Total: {len(payloads):,}  |  Dropped dupes: {fz.dropped_duplicate}")
 
