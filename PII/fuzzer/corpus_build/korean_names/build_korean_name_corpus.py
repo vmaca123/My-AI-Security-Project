@@ -9,6 +9,7 @@ if str(FUZZER_DIR) not in sys.path:
     sys.path.insert(0, str(FUZZER_DIR))
 
 from name_corpus import (
+    build_expanded_name_mutation_records,
     build_balanced_sample,
     build_tagged_name_records,
     load_given_names,
@@ -41,6 +42,16 @@ def parse_args() -> argparse.Namespace:
         help="JSONL output path for balanced sample",
     )
     parser.add_argument(
+        "--expanded-out",
+        default="PII/fuzzer/data/expanded_name_mutation_samples.jsonl",
+        help="JSONL output path for mutation-expanded name samples",
+    )
+    parser.add_argument(
+        "--name-seed-out",
+        default="PII/fuzzer/seeds/name/name_input_queue_202604_v1.jsonl",
+        help="JSONL output path for versioned name seed queue (id + text)",
+    )
+    parser.add_argument(
         "--sample-per-tier",
         type=int,
         default=500,
@@ -53,6 +64,12 @@ def parse_args() -> argparse.Namespace:
         help="weighted uses surname count distribution from CSV",
     )
     parser.add_argument("--max-records", type=int, default=None)
+    parser.add_argument(
+        "--expanded-per-record",
+        type=int,
+        default=12,
+        help="Max number of expanded mutation entries per base record (<=0 means all)",
+    )
     parser.add_argument("--seed", type=int, default=42)
     return parser.parse_args()
 
@@ -88,6 +105,37 @@ def main() -> int:
             f"balanced sample saved: {len(balanced):,} records "
             f"({args.sample_per_tier} per tier cap) -> {args.balanced_out}"
         )
+
+    expanded = build_expanded_name_mutation_records(
+        records,
+        per_record=args.expanded_per_record,
+        seed=args.seed,
+    )
+    write_jsonl(expanded, args.expanded_out)
+    print(
+        f"expanded mutation samples saved: {len(expanded):,} records "
+        f"(per-record cap: {args.expanded_per_record}) -> {args.expanded_out}"
+    )
+
+    seed_queue = []
+    for row in expanded:
+        seed_queue.append(
+            {
+                "id": row.get("id", ""),
+                "text": row.get("mutated_name", ""),
+                "name_id": row.get("name_id", ""),
+                "name_tier": row.get("name_tier", ""),
+                "name_tags": row.get("name_tags", []),
+                "original_name": row.get("original_name", ""),
+                "mutated_name": row.get("mutated_name", ""),
+                "mutation_name": row.get("mutation_name", ""),
+                "mutation_tags": row.get("mutation_tags", []),
+                "expected_action": row.get("expected_action", "mask"),
+                "synthetic": True,
+            }
+        )
+    write_jsonl(seed_queue, args.name_seed_out)
+    print(f"name seed queue saved: {len(seed_queue):,} records -> {args.name_seed_out}")
 
     return 0
 

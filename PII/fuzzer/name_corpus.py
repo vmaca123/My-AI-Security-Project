@@ -345,6 +345,45 @@ def load_tagged_name_records(path: str) -> List[Dict[str, object]]:
     return records
 
 
+def load_name_seed_records(path: str) -> List[Dict[str, object]]:
+    rows: List[Dict[str, object]] = []
+    with Path(path).open("r", encoding="utf-8") as fp:
+        for line in fp:
+            line = line.strip()
+            if not line:
+                continue
+            item = json.loads(line)
+            if not isinstance(item, dict):
+                continue
+            seed_id = str(item.get("id", "")).strip()
+            text = str(
+                item.get("text")
+                or item.get("mutated_name")
+                or item.get("full_name")
+                or item.get("mutated")
+                or ""
+            ).strip()
+            if not text:
+                continue
+            name_id = str(item.get("name_id", "")).strip()
+            name_tier = str(item.get("name_tier") or item.get("primary_tier") or "").strip()
+            name_tags_raw = item.get("name_tags", [])
+            if isinstance(name_tags_raw, list):
+                name_tags = [str(tag) for tag in name_tags_raw]
+            else:
+                name_tags = [str(name_tags_raw)] if str(name_tags_raw).strip() else []
+            rows.append(
+                {
+                    "id": seed_id,
+                    "text": text,
+                    "name_id": name_id,
+                    "name_tier": name_tier,
+                    "name_tags": name_tags,
+                }
+            )
+    return rows
+
+
 def _pick_title_suffix(record: Dict[str, object], full_name: str) -> str:
     return _pick_title_suffix_from_pool(record=record, full_name=full_name, pool=TITLE_SUFFIXES, salt="full_name")
 
@@ -469,6 +508,58 @@ def build_korean_name_mutations(record: Dict[str, object]) -> List[Dict[str, obj
         )
 
     return mutations
+
+
+def build_expanded_name_mutation_records(
+    records: Sequence[Dict[str, object]],
+    per_record: int = 0,
+    seed: int = 42,
+) -> List[Dict[str, object]]:
+    rng = random.Random(seed)
+    out: List[Dict[str, object]] = []
+    seq = 0
+
+    for rec in records:
+        full = str(rec.get("full_name", "")).strip()
+        if not full:
+            continue
+        name_id = str(rec.get("name_id", "")).strip()
+        tier = str(rec.get("primary_tier", "T1_common_baseline"))
+        name_tags = list(rec.get("name_tags", []))
+
+        mutations = [{"mutation_name": "official", "mutated_name": full, "mutation_tags": ["official"]}]
+        mutations.extend(build_korean_name_mutations(rec))
+
+        if per_record > 0 and len(mutations) > per_record:
+            picked = [mutations[0]]
+            if per_record > 1:
+                picked.extend(rng.sample(mutations[1:], k=per_record - 1))
+            mutations = picked
+
+        for item in mutations:
+            mutated_name = str(item.get("mutated_name", "")).strip()
+            if not mutated_name:
+                continue
+            seq += 1
+            mutation_name = str(item.get("mutation_name", "official"))
+            mutation_tags = list(item.get("mutation_tags", [mutation_name]))
+            out.append(
+                {
+                    "id": f"NAM-{seq:06d}",
+                    "name_id": name_id,
+                    "name_tier": tier,
+                    "name_tags": name_tags,
+                    "original_name": full,
+                    "mutated_name": mutated_name,
+                    "mutation_name": mutation_name,
+                    "mutation_tags": mutation_tags,
+                    "expected_action": "mask",
+                    "original": full,
+                    "mutated": mutated_name,
+                    "synthetic": True,
+                }
+            )
+    return out
 
 
 def build_balanced_sample(

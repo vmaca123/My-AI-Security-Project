@@ -1,0 +1,36 @@
+{
+  "total": 85961,
+  "by_primary_tier": {
+    "T1_common_baseline": 36742,
+    "T2_compound_surname": 91,
+    "T3_rare_surname": 79,
+    "T4_single_given": 529,
+    "T5_native_korean": 451,
+    "T6_long_given": 39777,
+    "T7_foreign_transliterated": 7529,
+    "T8_mixed_script": 57,
+    "T9_contextual_or_noisy": 706
+  },
+  "top_tags": {
+    "script_hangul": 85904,
+    "surname_len_1": 85869,
+    "origin_unknown": 74805,
+    "surname_top10": 56676,
+    "given_len_2": 37896,
+    "full_len_3": 37857,
+    "full_len_5plus": 32289,
+    "given_len_4plus": 32273,
+    "surname_top100": 29189,
+    "full_len_4": 15274,
+    "given_len_3": 15251,
+    "origin_foreign": 7574,
+    "origin_native": 3582,
+    "context_or_noisy": 706,
+    "full_len_2": 541,
+    "given_len_1": 541,
+    "surname_rare": 96,
+    "compound_surname": 92,
+    "surname_len_2": 92,
+    "script_mixed": 57
+  }
+}

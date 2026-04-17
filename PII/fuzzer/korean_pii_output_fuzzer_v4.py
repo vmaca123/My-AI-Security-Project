@@ -21,7 +21,7 @@ import json, random, argparse, string
 from datetime import datetime
 from collections import defaultdict
 
-from name_corpus import build_korean_name_mutations, load_tagged_name_records
+from name_corpus import build_korean_name_mutations, load_name_seed_records, load_tagged_name_records
 from address_corpus import build_expanded_address_mutation_records, load_address_seed_records, load_tagged_address_records
 from korean_pii_fuzzer_v4 import (
     get_all_kr_names, get_tier, Mut, _rint, _rchoice,
@@ -288,15 +288,21 @@ class OutputFuzzerV4:
     def __init__(
         self,
         name_corpus_path=None,
+        name_seed_path=None,
         name_sampling="random",
         address_corpus_path=None,
         address_seed_path=None,
         address_sampling="random",
     ):
         self.name_corpus_source = name_corpus_path or "legacy_embedded"
+        self.name_seed_source = name_seed_path or ""
         self.name_sampling = name_sampling
         self.name_records = self._load_name_records(name_corpus_path)
-        self.names = [rec["full_name"] for rec in self.name_records]
+        self.name_seed_records = self._load_name_seed_records(name_seed_path)
+        if self.name_seed_records:
+            self.names = [str(rec.get("text", "")).strip() for rec in self.name_seed_records if str(rec.get("text", "")).strip()]
+        else:
+            self.names = [rec["full_name"] for rec in self.name_records]
         self.address_corpus_source = address_corpus_path or "legacy_generator"
         self.address_seed_source = address_seed_path or ""
         self.address_sampling = address_sampling
@@ -355,6 +361,26 @@ class OutputFuzzerV4:
             if bucket:
                 return _rchoice(bucket)
         return _rchoice(self.name_records)
+
+    def _load_name_seed_records(self, name_seed_path):
+        if name_seed_path:
+            try:
+                records = load_name_seed_records(name_seed_path)
+                if records:
+                    return records
+                self.name_seed_source = ""
+            except FileNotFoundError:
+                print(f"[WARN] name seed not found: {name_seed_path}. falling back to corpus/built-in names.")
+                self.name_seed_source = ""
+            except json.JSONDecodeError:
+                print(f"[WARN] name seed parse failed: {name_seed_path}. falling back to corpus/built-in names.")
+                self.name_seed_source = ""
+        return []
+
+    def _pick_name_seed_record(self):
+        if not self.name_seed_records:
+            return None
+        return _rchoice(self.name_seed_records)
 
     def _load_address_records(self, address_corpus_path):
         if address_corpus_path:
@@ -576,9 +602,34 @@ class OutputFuzzerV4:
             templates = DOMAIN_TEMPLATES[domain]
 
             for _ in range(count):
-                name_record = self._pick_name_record()
-                name = name_record["full_name"]
-                tier = name_record.get("primary_tier", "T1_common_baseline")
+                name_seed = self._pick_name_seed_record()
+                if name_seed:
+                    name = str(name_seed.get("text", "")).strip()
+                    if not name:
+                        continue
+                    tier = str(name_seed.get("name_tier", "")).strip() or "seed_queue"
+                    name_id = (
+                        str(name_seed.get("name_id", "")).strip()
+                        or str(name_seed.get("id", "")).strip()
+                        or f"seed_{self.n:06d}"
+                    )
+                    name_tags_raw = name_seed.get("name_tags", [])
+                    if isinstance(name_tags_raw, list):
+                        name_tags = [str(tag) for tag in name_tags_raw]
+                    else:
+                        name_tags = [str(name_tags_raw)] if str(name_tags_raw).strip() else []
+                    if not name_tags:
+                        name_tags = ["seed_queue"]
+                    name_record = {
+                        "name_id": name_id,
+                        "full_name": name,
+                        "primary_tier": tier,
+                        "name_tags": name_tags,
+                    }
+                else:
+                    name_record = self._pick_name_record()
+                    name = name_record["full_name"]
+                    tier = name_record.get("primary_tier", "T1_common_baseline")
                 address_value = ""
                 address_meta = None
                 address_seed = self._pick_address_seed_record()
@@ -716,6 +767,8 @@ class OutputFuzzerV4:
                 "dropped_duplicate": self.dropped_duplicate,
                 "name_corpus": len(self.names),
                 "name_corpus_source": self.name_corpus_source,
+                "name_seed": len(self.name_seed_records),
+                "name_seed_source": self.name_seed_source,
                 "name_sampling": self.name_sampling,
                 "address_corpus": len(self.address_records),
                 "address_corpus_source": self.address_corpus_source,
@@ -746,6 +799,11 @@ def main():
         help="Optional JSONL name corpus with fields: full_name, primary_tier, name_tags",
     )
     parser.add_argument(
+        "--name-seed",
+        default=None,
+        help="Optional JSONL name seed queue with fields: id, text. Takes precedence over --name-corpus.",
+    )
+    parser.add_argument(
         "--name-sampling",
         choices=["random", "stratified"],
         default="random",
@@ -771,6 +829,7 @@ def main():
 
     fz = OutputFuzzerV4(
         name_corpus_path=args.name_corpus,
+        name_seed_path=args.name_seed,
         name_sampling=args.name_sampling,
         address_corpus_path=args.address_corpus,
         address_seed_path=args.address_seed,
@@ -782,6 +841,7 @@ def main():
     print(f"\n{'='*70}")
     print(f"  Korean PII Output Fuzzer v4.0 (Final)")
     print(f"  Name corpus source: {fz.name_corpus_source} | Sampling: {fz.name_sampling}")
+    print(f"  Name seed source: {fz.name_seed_source or 'none'} | Seeds: {len(fz.name_seed_records):,}")
     print(f"  Address corpus source: {fz.address_corpus_source} | Sampling: {fz.address_sampling}")
     print(f"  Address seed source: {fz.address_seed_source or 'none'} | Seeds: {len(fz.address_seed_records):,}")
     print(f"{'='*70}")

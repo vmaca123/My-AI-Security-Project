@@ -31,3 +31,26 @@ python PII/fuzzer/korean_pii_output_fuzzer_v4.py --address-seed PII/fuzzer/seeds
 
 `--address-seed`는 `id`, `text` 필드를 가진 JSONL 파일을 읽는다. `--address-corpus`도 함께 지정하면 `--address-seed`가 우선 사용된다.
 `v2` seed는 기존 주소 변형에 더해 한국어 주소 변형(`address_choseong`, `address_jamo`, `address_kr_digits`, `address_zwsp`, `address_unit_space_noise`)까지 포함한다.
+
+## Name Seeds
+
+이름 seed는 아래 규칙으로 관리한다.
+
+```text
+PII/fuzzer/seeds/name/name_input_queue_{source_yyyymm}_{version}.jsonl
+```
+
+예:
+
+```text
+PII/fuzzer/seeds/name/name_input_queue_202604_v1.jsonl
+```
+
+실행 예:
+
+```bash
+python PII/fuzzer/korean_pii_fuzzer_v4.py --name-seed PII/fuzzer/seeds/name/name_input_queue_202604_v1.jsonl
+python PII/fuzzer/korean_pii_output_fuzzer_v4.py --name-seed PII/fuzzer/seeds/name/name_input_queue_202604_v1.jsonl
+```
+
+`--name-seed`는 `id`, `text` 필드를 가진 JSONL 파일을 읽는다. `--name-corpus`도 함께 지정하면 `--name-seed`가 우선 사용된다.
