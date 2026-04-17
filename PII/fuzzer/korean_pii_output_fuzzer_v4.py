@@ -22,7 +22,12 @@ from datetime import datetime
 from collections import defaultdict
 
 from name_corpus import build_korean_name_mutations, load_name_seed_records, load_tagged_name_records
-from address_corpus import build_expanded_address_mutation_records, load_address_seed_records, load_tagged_address_records
+from address_corpus import (
+    build_expanded_address_mutation_records,
+    build_expanded_address_seed_mutation_records,
+    load_address_seed_records,
+    load_tagged_address_records,
+)
 from korean_pii_fuzzer_v4 import (
     get_all_kr_names, get_tier, Mut, _rint, _rchoice,
     gen_rrn, gen_alien, gen_card, gen_biz_reg, gen_device_id, gen_vin, gen_us_ssn,
@@ -527,12 +532,19 @@ class OutputFuzzerV4:
         }
         name_id = name_record.get("name_id", "") if name_record else ""
         name_tags = list(name_record.get("name_tags", [])) if name_record else []
+        address_mutation = ""
+        address_mutation_tags = []
+        if address_meta and str(address_meta.get("address_tier", "")) == "seed_queue":
+            address_mutation = str(address_meta.get("mutation_name", "")).strip()
+            raw_tags = address_meta.get("mutation_tags", [])
+            if isinstance(raw_tags, list):
+                address_mutation_tags = [str(tag) for tag in raw_tags]
 
         # L0
         self._add(
             pii_type,
             0,
-            "original",
+            address_mutation or "original",
             pii_str,
             base,
             tier,
@@ -542,6 +554,7 @@ class OutputFuzzerV4:
             name_tags=name_tags,
             original_name=name,
             mutated_name=name,
+            mutation_tags=address_mutation_tags or None,
         )
         # L1
         if name and name in base:
@@ -634,16 +647,25 @@ class OutputFuzzerV4:
                 address_meta = None
                 address_seed = self._pick_address_seed_record()
                 if address_seed:
-                    address_value = str(address_seed.get("text", "")).strip()
-                    if address_value:
+                    expanded = build_expanded_address_seed_mutation_records(
+                        address_seed,
+                        per_record=0,
+                        seed=_rint(0, 10**9),
+                    )
+                    if expanded:
+                        picked = _rchoice(expanded)
+                        address_value = str(picked.get("mutated_address", "")).strip()
+                    if expanded and address_value:
                         address_meta = {
-                            "address_id": str(address_seed.get("id", "")),
-                            "address_tier": "seed_queue",
-                            "address_system": "seed",
-                            "address_tags": ["seed_queue"],
-                            "original_address": address_value,
+                            "address_id": str(picked.get("address_id", "")),
+                            "address_tier": str(picked.get("address_tier", "")),
+                            "address_system": str(picked.get("address_system", "")),
+                            "address_tags": list(picked.get("address_tags", [])),
+                            "original_address": str(picked.get("original_address", "")),
                             "mutated_address": address_value,
-                            "expected_action": "maybe_mask",
+                            "mutation_name": str(picked.get("mutation_name", "official")),
+                            "mutation_tags": list(picked.get("mutation_tags", [])),
+                            "expected_action": str(picked.get("expected_action", "")),
                         }
                 address_record = None if address_value else self._pick_address_record()
                 if address_record:
@@ -663,6 +685,8 @@ class OutputFuzzerV4:
                                 "address_tags": list(picked.get("address_tags", [])),
                                 "original_address": str(picked.get("original_address", "")),
                                 "mutated_address": address_value,
+                                "mutation_name": str(picked.get("mutation_name", "official")),
+                                "mutation_tags": list(picked.get("mutation_tags", [])),
                                 "expected_action": str(picked.get("expected_action", "")),
                             }
                 bundle = bundle_gen(name)

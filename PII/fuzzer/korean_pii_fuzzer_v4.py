@@ -23,7 +23,12 @@ from datetime import datetime
 from collections import defaultdict
 
 from name_corpus import build_korean_name_mutations, load_name_seed_records, load_tagged_name_records
-from address_corpus import build_expanded_address_mutation_records, load_address_seed_records, load_tagged_address_records
+from address_corpus import (
+    build_expanded_address_mutation_records,
+    build_expanded_address_seed_mutation_records,
+    load_address_seed_records,
+    load_tagged_address_records,
+)
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -1058,30 +1063,39 @@ class FuzzerV4:
                     if pdef["id"] == "address" and self.address_seed_records:
                         address_seed = self._pick_address_seed_record()
                         if address_seed:
-                            addr_text = str(address_seed.get("text", "")).strip()
-                            if addr_text:
-                                base = pdef["tpl"].format(name=name, pii=addr_text)
-                                self._add(
-                                    pdef["id"],
-                                    0,
-                                    "seed_queue",
-                                    addr_text,
-                                    base,
-                                    tier,
-                                    vg=vg,
-                                    name_id=name_id,
-                                    name_tags=name_tags,
-                                    original_name=name,
-                                    mutated_name=name,
-                                    mutation_tags=["seed_queue"],
-                                    address_id=str(address_seed.get("id", "")),
-                                    address_tier="seed_queue",
-                                    address_system="seed",
-                                    address_tags=["seed_queue"],
-                                    original_address=addr_text,
-                                    mutated_address=addr_text,
-                                    expected_action="maybe_mask",
-                                )
+                            expanded = build_expanded_address_seed_mutation_records(
+                                address_seed,
+                                per_record=0,
+                                seed=_rint(0, 10**9),
+                            )
+                            if expanded:
+                                for addr_item in expanded:
+                                    addr_text = str(addr_item.get("mutated_address", "")).strip()
+                                    if not addr_text:
+                                        continue
+                                    addr_mutation = str(addr_item.get("mutation_name", "official"))
+                                    base = pdef["tpl"].format(name=name, pii=addr_text)
+                                    self._add(
+                                        pdef["id"],
+                                        self._address_mutation_level(addr_mutation),
+                                        addr_mutation,
+                                        str(addr_item.get("original_address", addr_text)),
+                                        base,
+                                        tier,
+                                        vg=vg,
+                                        name_id=name_id,
+                                        name_tags=name_tags,
+                                        original_name=name,
+                                        mutated_name=name,
+                                        mutation_tags=list(addr_item.get("mutation_tags", [addr_mutation])),
+                                        address_id=str(addr_item.get("address_id", "")),
+                                        address_tier=str(addr_item.get("address_tier", "")),
+                                        address_system=str(addr_item.get("address_system", "")),
+                                        address_tags=list(addr_item.get("address_tags", [])),
+                                        original_address=str(addr_item.get("original_address", addr_text)),
+                                        mutated_address=addr_text,
+                                        expected_action=str(addr_item.get("expected_action", "")),
+                                    )
                                 continue
                     if pdef["id"] == "address" and self.address_records:
                         address_record = self._pick_address_record()

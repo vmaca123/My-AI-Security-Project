@@ -89,6 +89,11 @@ KOR_DIGIT_WORDS = {
     "9": "구",
 }
 
+POSTCODE_PATTERN = re.compile(r"(?<!\d)(?P<postcode>\d{5})(?!\d)")
+ROAD_BUILDING_PATTERN = re.compile(
+    r"(?P<road_name>[가-힣A-Za-z0-9]+(?:대로|번길|로|길))\s+(?P<building_no>\d+(?:-\d+)?)"
+)
+
 
 def _find_zip(raw_dir: Path, keyword: str) -> Optional[Path]:
     candidates = sorted([p for p in raw_dir.glob("*.zip") if keyword in p.name], key=lambda p: p.name)
@@ -228,6 +233,37 @@ def _stable_index(seed_text: str, size: int) -> int:
     if size <= 0:
         return 0
     return sum(ord(ch) for ch in seed_text) % size
+
+
+def _postcode_in_text(text: str, postcode: str) -> bool:
+    if not postcode:
+        return False
+    return re.search(rf"(?<!\d){re.escape(postcode)}(?!\d)", text) is not None
+
+
+def _remove_first_postcode(text: str, postcode: str) -> str:
+    value = re.sub(rf"(?<!\d){re.escape(postcode)}(?!\d)", "", text, count=1)
+    value = re.sub(r"\s+", " ", value)
+    return value.strip(" ,()")
+
+
+def _extract_seed_address_components(text: str) -> Dict[str, str]:
+    components: Dict[str, str] = {}
+    for sido in sorted(KOR_SIDO_ABBREV, key=len, reverse=True):
+        if sido in text:
+            components["sido"] = sido
+            break
+
+    postcode_match = POSTCODE_PATTERN.search(text)
+    if postcode_match:
+        components["postcode"] = postcode_match.group("postcode")
+
+    road_match = ROAD_BUILDING_PATTERN.search(text)
+    if road_match:
+        components["road_name"] = road_match.group("road_name")
+        components["building_no"] = road_match.group("building_no")
+
+    return components
 
 
 def _parse_road_kor(fields: Sequence[str]) -> Optional[Dict[str, str]]:
@@ -1095,8 +1131,14 @@ def build_korean_address_mutations(record: Dict[str, object]) -> List[Dict[str, 
         )
 
     if postcode:
-        add("postcode_prefix", f"{postcode} {full}", ["postcode_prefix"])
-        add("postcode_suffix", f"{full} ({postcode})", ["postcode_suffix"])
+        if _postcode_in_text(full, postcode):
+            without_postcode = _remove_first_postcode(full, postcode)
+            if without_postcode:
+                add("postcode_prefix", f"{postcode} {without_postcode}", ["postcode_prefix"])
+                add("postcode_suffix", f"{without_postcode} ({postcode})", ["postcode_suffix"])
+        else:
+            add("postcode_prefix", f"{postcode} {full}", ["postcode_prefix"])
+            add("postcode_suffix", f"{full} ({postcode})", ["postcode_suffix"])
 
     if detail:
         add("detail_first", f"{detail}, {full}", ["detail_first"])
@@ -1179,6 +1221,27 @@ def build_expanded_address_mutation_records(
                 }
             )
     return out
+
+
+def build_expanded_address_seed_mutation_records(
+    seed_record: Dict[str, object],
+    per_record: int = 0,
+    seed: int = 42,
+) -> List[Dict[str, object]]:
+    text = str(seed_record.get("text", "")).strip()
+    if not text:
+        return []
+    address_id = str(seed_record.get("id", "")).strip()
+    record = {
+        "address_id": address_id,
+        "full_address": text,
+        "primary_tier": "seed_queue",
+        "address_system": "seed",
+        "address_tags": ["seed_queue"],
+        "components": _extract_seed_address_components(text),
+        "synthetic": True,
+    }
+    return build_expanded_address_mutation_records([record], per_record=per_record, seed=seed)
 
 
 def build_balanced_address_sample(
