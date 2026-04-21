@@ -58,6 +58,12 @@ from korean_transaction_generator import (
 )
 from prescription_corpus import gen_prescription_for_diagnosis, resolve_prescription_record
 from prescription_mutations import build_prescription_korean_mutations
+from medical_record_generator import (
+    build_medical_record_korean_mutations,
+    gen_medical_record_record,
+    resolve_medical_record_record,
+    validate_medical_record_number,
+)
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -85,10 +91,27 @@ def _gen_bundle_crm(name):
 
 def _gen_bundle_healthcare(name):
     diag = gen_diagnosis(); presc = gen_prescription_for_diagnosis(diag); allergy = gen_allergy()
-    hosp = gen_hospital(); med_rec = gen_medical_record(); phone = gen_phone()
+    hosp = gen_hospital(); medical_record = gen_medical_record_record(); phone = gen_phone()
+    med_rec = medical_record.value
+    # 전국 공통 MRN 규칙이 아니라 synthetic hospital-style spec validator 기준으로 검증한다.
+    med_valid = bool(medical_record.rule_valid and validate_medical_record_number(med_rec))
     return {
         "name": name, "phone": phone, "diagnosis": diag, "prescription": presc,
         "allergy": allergy, "hospital": hosp, "medical_rec": med_rec,
+        "medical_rec_record": {
+            "value": medical_record.value,
+            "hospital_key": medical_record.hospital_key,
+            "hospital_name": medical_record.hospital_name,
+            "hospital_code": medical_record.hospital_code,
+            "pattern_name": medical_record.pattern_name,
+            "year": int(medical_record.year),
+            "dept_code": medical_record.dept_code,
+            "serial": medical_record.serial,
+            "check_digit": medical_record.check_digit,
+            "synthetic": bool(medical_record.synthetic),
+            "rule_valid": med_valid,
+        },
+        "medical_rec_validity": {"format_valid": med_valid, "rule_valid": med_valid, "semantic_valid": True},
         "primary_pii": diag, "primary_label": "진단명", "primary_label_en": "diagnosis",
         "bundle_types": ["diagnosis","prescription","allergy","hospital","medical_rec"], "pii_count": 5,
     }
@@ -505,6 +528,15 @@ class OutputFuzzerV4:
         account="",
         bank_account="",
         account_pattern_id="",
+        medical_rec_hospital_key="",
+        medical_rec_hospital_name="",
+        medical_rec_hospital_code="",
+        medical_rec_pattern_name="",
+        medical_rec_year=0,
+        medical_rec_dept_code="",
+        medical_rec_serial="",
+        medical_rec_check_digit="",
+        medical_rec_rule_valid=True,
     ):
         key = (pii_type, mutation, mutated[:200])
         if key in self._seen:
@@ -557,6 +589,15 @@ class OutputFuzzerV4:
             "account": account,
             "bank_account": bank_account,
             "account_pattern_id": account_pattern_id,
+            "medical_rec_hospital_key": medical_rec_hospital_key,
+            "medical_rec_hospital_name": medical_rec_hospital_name,
+            "medical_rec_hospital_code": medical_rec_hospital_code,
+            "medical_rec_pattern_name": medical_rec_pattern_name,
+            "medical_rec_year": int(medical_rec_year) if str(medical_rec_year).strip() else 0,
+            "medical_rec_dept_code": medical_rec_dept_code,
+            "medical_rec_serial": medical_rec_serial,
+            "medical_rec_check_digit": medical_rec_check_digit,
+            "medical_rec_rule_valid": bool(medical_rec_rule_valid),
             "synthetic": True,
         })
         self.n += 1
@@ -564,7 +605,8 @@ class OutputFuzzerV4:
     def _mutate_output(self, pii_type, pii_str, base, name, tier,
                        domain, style, resp_len, resp_fmt, pii_count, vg,
                        partial_mask=False, bundle_types=None, name_record=None, address_meta=None,
-                       account_meta=None, transaction_meta=None, prescription_meta=None, validity_flags=None):
+                       account_meta=None, transaction_meta=None, prescription_meta=None,
+                       medical_record_meta=None, validity_flags=None):
         s = str(pii_str)
         has_digits = any(c.isdigit() for c in s)
         has_dash = "-" in s
@@ -574,6 +616,7 @@ class OutputFuzzerV4:
         account_meta = account_meta or {}
         transaction_meta = transaction_meta or {}
         prescription_meta = prescription_meta or {}
+        medical_record_meta = medical_record_meta or {}
         validity_flags = validity_flags or {}
         kw.update({
             "format_valid": bool(validity_flags.get("format_valid", True)),
@@ -584,6 +627,15 @@ class OutputFuzzerV4:
             "account": str(account_meta.get("account", "")),
             "bank_account": str(account_meta.get("bank_account", "")),
             "account_pattern_id": str(account_meta.get("pattern_id", "")),
+            "medical_rec_hospital_key": str(medical_record_meta.get("hospital_key", "")),
+            "medical_rec_hospital_name": str(medical_record_meta.get("hospital_name", "")),
+            "medical_rec_hospital_code": str(medical_record_meta.get("hospital_code", "")),
+            "medical_rec_pattern_name": str(medical_record_meta.get("pattern_name", "")),
+            "medical_rec_year": int(medical_record_meta.get("year", 0) or 0),
+            "medical_rec_dept_code": str(medical_record_meta.get("dept_code", "")),
+            "medical_rec_serial": str(medical_record_meta.get("serial", "")),
+            "medical_rec_check_digit": str(medical_record_meta.get("check_digit", "")),
+            "medical_rec_rule_valid": bool(medical_record_meta.get("rule_valid", True)),
         })
         addr_kw = {
             "address_id": str(address_meta.get("address_id", "")) if address_meta else "",
@@ -793,6 +845,44 @@ class OutputFuzzerV4:
                     mutation_tags=mutation_tags,
                 )
 
+        # L4/L5: medical_rec 전용 한국어 변형.
+        # context mutation은 문장 전체를 교체하고, 나머지는 base 내부 MRN 표기만 치환한다.
+        medical_record_display = str(medical_record_meta.get("value", "")).strip()
+        medical_record_record = resolve_medical_record_record(medical_record_display)
+        if medical_record_record:
+            for medical_mut in build_medical_record_korean_mutations(medical_record_record, name=name):
+                mutation_name = str(medical_mut.get("mutation_name", "medical_rec_korean")).strip()
+                mutated_medical_text = str(medical_mut.get("mutated_text", "")).strip()
+                mutation_level = int(medical_mut.get("mutation_level", 4))
+                mutation_tags = list(medical_mut.get("mutation_tags", ["medical_record_korean"]))
+                if not mutated_medical_text:
+                    continue
+
+                if mutation_name.startswith("medical_rec_ctx_"):
+                    mutated_base = mutated_medical_text
+                elif medical_record_display and medical_record_display in base:
+                    mutated_base = base.replace(medical_record_display, mutated_medical_text)
+                elif "medical_rec" in (bundle_types or []):
+                    mutated_base = mutated_medical_text
+                else:
+                    continue
+
+                self._add(
+                    pii_type,
+                    mutation_level,
+                    mutation_name,
+                    medical_record_display or mutated_medical_text,
+                    mutated_base,
+                    tier,
+                    **kw,
+                    **addr_kw,
+                    name_id=name_id,
+                    name_tags=name_tags,
+                    original_name=name,
+                    mutated_name=name,
+                    mutation_tags=mutation_tags,
+                )
+
     def generate_all(self, count=10):
         self.payloads = []; self.n = 0; self._seen = set(); self.dropped_duplicate = 0
 
@@ -909,6 +999,10 @@ class OutputFuzzerV4:
                     "prescription": str(bundle.get("prescription", "")),
                     "diagnosis": str(bundle.get("diagnosis", "")),
                 }
+                medical_record_meta = bundle.get("medical_rec_record", {})
+                if not isinstance(medical_record_meta, dict):
+                    medical_record_meta = {}
+                medical_record_validity = bundle.get("medical_rec_validity", {})
                 validity_flags = {"format_valid": True, "rule_valid": True, "semantic_valid": True}
                 if account_meta["bank"] and account_meta["account"]:
                     account_validation = validate_account(account_meta)
@@ -925,6 +1019,12 @@ class OutputFuzzerV4:
                             "rule_valid": bool(validity_flags["rule_valid"] and transaction_validation.get("rule_valid", False)),
                             "semantic_valid": bool(validity_flags["semantic_valid"] and transaction_validation.get("semantic_valid", False)),
                         }
+                if domain == "healthcare" and isinstance(medical_record_validity, dict):
+                    validity_flags = {
+                        "format_valid": bool(validity_flags["format_valid"] and medical_record_validity.get("format_valid", False)),
+                        "rule_valid": bool(validity_flags["rule_valid"] and medical_record_validity.get("rule_valid", False)),
+                        "semantic_valid": bool(validity_flags["semantic_valid"] and medical_record_validity.get("semantic_valid", False)),
+                    }
 
                 for tpl_key, tpl_list in templates.items():
                     # Determine style, length, format
@@ -971,6 +1071,7 @@ class OutputFuzzerV4:
                         account_meta=account_meta,
                         transaction_meta=transaction_meta,
                         prescription_meta=prescription_meta,
+                        medical_record_meta=medical_record_meta,
                         validity_flags=validity_flags,
                     )
 

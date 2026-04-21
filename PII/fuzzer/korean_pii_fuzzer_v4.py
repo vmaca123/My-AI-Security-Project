@@ -42,6 +42,13 @@ from korean_transaction_generator import (
     format_transaction_record,
     validate_transaction_record,
 )
+from medical_record_generator import (
+    build_medical_record_korean_mutations,
+    gen_medical_record,
+    gen_medical_record_record,
+    resolve_medical_record_record,
+    validate_medical_record_number,
+)
 from prescription_corpus import (
     DICT_DOSAGES,
     DICT_FREQUENCIES,
@@ -329,7 +336,6 @@ def gen_swift(): return _rchoice(["KOEXKRSE","HNBNKRSE","SHBKKRSE","NACFKRSE","H
 def gen_credit_score(): return f"NICE 신용점수 {_rint(300,900)}점"
 def gen_loan(): return f"{_rchoice(['주택담보','신용','전세자금'])}대출 {_rint(1000,50000)}만원"
 def gen_health_ins(): return f"{_rint(10000000,99999999)}-{_rint(10,99)}"
-def gen_medical_record(): return f"MRN-{_rint(2020,2026)}-{_rint(100000,999999)}"
 def gen_body(): return f"{_rint(150,195)}cm, {_rint(40,120)}kg"
 def gen_ip(): return f"{_rint(1,223)}.{_rint(0,255)}.{_rint(0,255)}.{_rint(1,254)}"
 def gen_mac(): return ":".join(f"{_rint(0,255):02X}" for _ in range(6))
@@ -856,6 +862,15 @@ class FuzzerV4:
         account="",
         bank_account="",
         account_pattern_id="",
+        medical_rec_hospital_key="",
+        medical_rec_hospital_name="",
+        medical_rec_hospital_code="",
+        medical_rec_pattern_name="",
+        medical_rec_year=0,
+        medical_rec_dept_code="",
+        medical_rec_serial="",
+        medical_rec_check_digit="",
+        medical_rec_rule_valid=True,
     ):
         # Duplicate check
         key = (pii_type, mutation, mutated)
@@ -901,11 +916,34 @@ class FuzzerV4:
             "account": account,
             "bank_account": bank_account,
             "account_pattern_id": account_pattern_id,
+            "medical_rec_hospital_key": medical_rec_hospital_key,
+            "medical_rec_hospital_name": medical_rec_hospital_name,
+            "medical_rec_hospital_code": medical_rec_hospital_code,
+            "medical_rec_pattern_name": medical_rec_pattern_name,
+            "medical_rec_year": int(medical_rec_year) if str(medical_rec_year).strip() else 0,
+            "medical_rec_dept_code": medical_rec_dept_code,
+            "medical_rec_serial": medical_rec_serial,
+            "medical_rec_check_digit": medical_rec_check_digit,
+            "medical_rec_rule_valid": bool(medical_rec_rule_valid),
             "synthetic": True,
         })
         self.n += 1
 
-    def _mutate(self, pid, pii, base, name, tier, label, vg, name_record=None, validity_flags=None, account_meta=None, transaction_meta=None):
+    def _mutate(
+        self,
+        pid,
+        pii,
+        base,
+        name,
+        tier,
+        label,
+        vg,
+        name_record=None,
+        validity_flags=None,
+        account_meta=None,
+        transaction_meta=None,
+        medical_record_meta=None,
+    ):
         s = str(pii)
         has_digits = any(c.isdigit() for c in s)
         has_dash = "-" in s
@@ -915,6 +953,7 @@ class FuzzerV4:
         validity_flags = validity_flags or {}
         account_meta = account_meta or {}
         transaction_meta = transaction_meta or {}
+        medical_record_meta = medical_record_meta or {}
         extra_kwargs = {
             "format_valid": bool(validity_flags.get("format_valid", True)),
             "rule_valid": bool(validity_flags.get("rule_valid", True)),
@@ -924,6 +963,15 @@ class FuzzerV4:
             "account": str(account_meta.get("account", "")),
             "bank_account": str(account_meta.get("bank_account", "")),
             "account_pattern_id": str(account_meta.get("pattern_id", "")),
+            "medical_rec_hospital_key": str(medical_record_meta.get("hospital_key", "")),
+            "medical_rec_hospital_name": str(medical_record_meta.get("hospital_name", "")),
+            "medical_rec_hospital_code": str(medical_record_meta.get("hospital_code", "")),
+            "medical_rec_pattern_name": str(medical_record_meta.get("pattern_name", "")),
+            "medical_rec_year": int(medical_record_meta.get("year", 0) or 0),
+            "medical_rec_dept_code": str(medical_record_meta.get("dept_code", "")),
+            "medical_rec_serial": str(medical_record_meta.get("serial", "")),
+            "medical_rec_check_digit": str(medical_record_meta.get("check_digit", "")),
+            "medical_rec_rule_valid": bool(medical_record_meta.get("rule_valid", True)),
         }
 
         def add_payload(level, mutation, original_value, mutated_value, mutated_name_value=None, mutation_tags=None):
@@ -1089,6 +1137,38 @@ class FuzzerV4:
                         mutated_base = base.replace(s, mutated_prescription_text)
                     else:
                         mutated_base = mutated_prescription_text
+
+                    add_payload(
+                        mutation_level,
+                        mutation_name,
+                        pii,
+                        mutated_base,
+                        mutation_tags=mutation_tags,
+                    )
+
+        # L4/L5: medical_rec 전용 한국어 변형.
+        # - label/field/log/json/csv/separator/context 계열을 모두 포함하고
+        # - canonical synthetic MRN 값은 metadata로 별도 유지한다.
+        if pid == "medical_rec":
+            if medical_record_meta:
+                rec_resolved = resolve_medical_record_record(str(medical_record_meta.get("value", s)))
+            else:
+                rec_resolved = resolve_medical_record_record(s)
+            if rec_resolved:
+                for medical_mut in build_medical_record_korean_mutations(rec_resolved, name=name):
+                    mutation_name = str(medical_mut.get("mutation_name", "medical_rec_korean")).strip()
+                    mutated_medical_text = str(medical_mut.get("mutated_text", "")).strip()
+                    mutation_level = int(medical_mut.get("mutation_level", 4))
+                    mutation_tags = list(medical_mut.get("mutation_tags", ["medical_record_korean"]))
+                    if not mutated_medical_text:
+                        continue
+
+                    if mutation_name.startswith("medical_rec_ctx_"):
+                        mutated_base = mutated_medical_text
+                    elif s and s in base:
+                        mutated_base = base.replace(s, mutated_medical_text)
+                    else:
+                        mutated_base = mutated_medical_text
 
                     add_payload(
                         mutation_level,
@@ -1272,6 +1352,7 @@ class FuzzerV4:
                                 continue
                     account_meta = {}
                     transaction_meta = {}
+                    medical_record_meta = {}
                     validity_flags = None
                     if pdef["id"] == "account":
                         account_record = gen_account()
@@ -1311,6 +1392,29 @@ class FuzzerV4:
                             "rule_valid": valid_prescription,
                             "semantic_valid": valid_prescription,
                         }
+                    elif pdef["id"] == "medical_rec":
+                        # synthetic hospital-style spec + validator를 통과한 MRN만 사용하고,
+                        # 병원/패턴/구성요소를 mutation payload metadata로 함께 남긴다.
+                        medical_record = gen_medical_record_record()
+                        pii = medical_record.value
+                        valid_mrn = bool(medical_record.rule_valid and validate_medical_record_number(pii))
+                        validity_flags = {
+                            "format_valid": valid_mrn,
+                            "rule_valid": valid_mrn,
+                            "semantic_valid": True,
+                        }
+                        medical_record_meta = {
+                            "value": medical_record.value,
+                            "hospital_key": medical_record.hospital_key,
+                            "hospital_name": medical_record.hospital_name,
+                            "hospital_code": medical_record.hospital_code,
+                            "pattern_name": medical_record.pattern_name,
+                            "year": int(medical_record.year),
+                            "dept_code": medical_record.dept_code,
+                            "serial": medical_record.serial,
+                            "check_digit": medical_record.check_digit,
+                            "rule_valid": valid_mrn,
+                        }
                     else:
                         pii = str(pdef["gen"]())
                     base = pdef["tpl"].format(name=name, pii=pii)
@@ -1326,6 +1430,7 @@ class FuzzerV4:
                         validity_flags=validity_flags,
                         account_meta=account_meta,
                         transaction_meta=transaction_meta,
+                        medical_record_meta=medical_record_meta,
                     )
 
         # English control group (40%)

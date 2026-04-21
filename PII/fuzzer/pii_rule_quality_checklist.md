@@ -39,7 +39,7 @@
 | 번들 | 포함 타입 | 현재 리스크 |
 |---|---|---|
 | CRM | `phone`, `email`, `address`, `account` | `address`는 seed/corpus 강제 필요 |
-| Healthcare | `diagnosis`, `prescription`, `allergy`, `hospital`, `medical_rec` | `medical_rec`가 P0, `prescription`은 보강 완료 |
+| Healthcare | `diagnosis`, `prescription`, `allergy`, `hospital`, `medical_rec` | `prescription`, `medical_rec` 보강 완료 (`medical_rec`는 synthetic hospital-style rule + validator 기반) |
 | Finance | `rrn`, `card`, `account`, `transaction` | `transaction`이 P0 |
 | HR | `emp_id`, `dept`, `company`, `hire_date`, `work_email` | `emp_id`, `work_email`이 P0 |
 
@@ -68,6 +68,8 @@
 | 충분히 유효 | 체크섬, 공식 규칙, 실제 corpus, 또는 명확한 semantic dictionary가 적용되어 있고, 생성값이 검증 가능한 규칙을 통과한다. |
 | 대충 형식만 유효 | 정규식, 자리수, 범위, 한국어 업무 표현 정도는 맞지만 실제 기관별 규칙, 체크섬, 의미 일관성이 부족하다. |
 | 보강 필요 | 생성 방식이 너무 임의적이거나 실제 업무 데이터로 보기 어려워 downstream 평가 신뢰도를 떨어뜨릴 가능성이 크다. |
+
+주의: `medical_rec`처럼 공개된 전국 공통 포맷이나 체크섬이 없는 타입은 “충분히 유효”를 실제 기관 시스템 검증으로 해석하지 않는다. 이 경우의 기준은 명시된 synthetic 기관별 rule, 구성요소 의미, check digit, validator 통과 여부다.
 
 우선순위:
 
@@ -110,9 +112,60 @@
 | `account` 계좌번호 | 은행별 패턴 table 기반 생성 + `bank/bank_code/account/bank_account/pattern_id` record 반환, validator로 bank-account 매핑 검증 | 대충 형식만 유효 | `korean_account_generator.py`, `korean_pii_fuzzer_v4.py`, output CRM/Finance bundle | 번호 단독 임의 block과 은행명 context 유실은 해소. 단, 공식 checksum/상품코드/실계좌 검증은 없음 | 공개 근거가 명확한 은행별 패턴을 더 보강하고, 공식 checksum 또는 상품코드 규칙이 확인되는 경우에만 `충분히 유효`로 승격 |
 | `transaction` 거래내역 | 거래구분/방향/카테고리/가맹점 dictionary + 180일 이내 과거 거래일시 + 업종별 금액 범위 + 승인/거래번호 + 계좌/카드 last4 연계 | 충분히 유효 | `korean_transaction_generator.py`, `korean_pii_fuzzer_v4.py`, Finance bundle | synthetic dictionary 기반이라 실제 금융기관 내부 규격(BIN/MCC/실계좌) 검증은 하지 않음 | 카드 BIN/MCC profile, 기관별 세부 규격을 추가로 분리 |
 | `prescription` 처방전 | `prescription_corpus.py`의 약품별 dose/frequency/route/method/supply/diagnosis table 기반 생성 + `prescription_mutations.py`의 한국어 처방전 전용 L4/L5 변형 | 충분히 유효 | `prescription_corpus.py`, `prescription_mutations.py`, `korean_pii_fuzzer_v4.py`, Healthcare bundle | synthetic 처방 조각이며 실제 처방 권고/실처방 검증은 하지 않음 | 약품군/진단군 확대, 병원/진료과/처방일자 profile 연결 |
-| `medical_rec` 의료기록번호 | `MRN-YYYY-6digits` | 보강 필요 | `korean_pii_fuzzer_v4.py:313`, Healthcare bundle | 병원별 MRN 규칙이 없음 | 병원별 prefix/자리수/연도 포함 여부를 profile schema로 관리 |
+| `medical_rec` 의료기록번호 | 병원별 synthetic MRN spec (`CODE-YYYY/YY/YYYYMM-DEPT-SERIAL-CHECK`) + spec별 check digit + `medical_record_korean` L4/L5 변형 | 충분히 유효 (synthetic rule-valid) | `medical_record_generator.py`, `korean_pii_fuzzer_v4.py`, Healthcare bundle | 전국 단일 공식 MRN 규칙은 아니며, 병원별 synthetic institution-style 모델임 | 병원 spec/validator를 지속 확장하고 metadata 연결 범위를 bundle로 확대 |
 | `emp_id` 사번 | `EMP/사번-YYYY-4digits` | 보강 필요 | `korean_pii_fuzzer_v4.py:326`, HR bundle primary | 회사별 사번 체계 없음, 입사일과 불일치 가능 | 회사별 prefix, 입사연도, 순번 규칙으로 생성 |
 | `work_email` 업무이메일 | 3개 local-part + 4개 회사 도메인 | 보강 필요 | `korean_pii_fuzzer_v4.py:328`, HR bundle | 이름/회사와 불일치 가능 | 이름 romanization 기반 local-part, 회사 도메인 mapping |
+
+### `medical_rec` 생성/검증 설계 메모
+
+`medical_rec`은 `medical_record_generator.py`로 분리해서 관리한다. 한국 의료기록번호는 주민등록번호처럼 전국 공통 포맷이나 공개 체크섬이 있는 타입이 아니므로, 이 모듈은 실제 병원 내부 MRN 규칙을 추정하거나 단정하지 않는다. 대신 downstream PII 평가에서 필요한 “한국 병원 업무 데이터처럼 보이는 synthetic MRN”을 안정적으로 만들기 위해 병원별 synthetic spec과 validator를 함께 둔다.
+
+현재 “충분히 유효”의 의미는 실제 병원 시스템에서 조회 가능한 번호라는 뜻이 아니다. 생성값이 `hospital_code`, `year` 또는 `year/month`, `dept_code`, `serial`, `check_digit` 구성요소를 갖고, 해당 synthetic hospital-style spec의 validator를 통과한다는 뜻이다. 따라서 문서와 테스트에서는 `synthetic rule-valid`로 취급한다.
+
+현재 보장하는 것:
+
+- 병원별 spec이 명시되어 있고, 모든 생성값은 해당 spec에서 나온다.
+- check digit은 spec별 `luhn`, `mod11`, `mod11x` 중 하나로 계산한다.
+- `validate_medical_record_number()`가 포맷, 병원 코드, 연도 범위, 진료과 코드, serial 길이, check digit을 검증한다.
+- 실제 환자 MRN, 실제 병원 비공개 규칙, 실데이터 조회는 사용하지 않는다.
+
+현재 보장하지 않는 것:
+
+- 실제 병원 내부 MRN 규칙 일치 여부
+- 실제 환자 또는 실제 병원 시스템에 존재하는 번호 여부
+- 전국 공식 MRN 표준이나 공통 체크섬 검증
+
+#### `medical_rec` 한국어 변형 상세
+
+목적은 한국어 의료 업무 문맥에서 `medical_rec` 가드레일 커버리지를 넓히는 것이다. 변형은 모두 `build_medical_record_korean_mutations()`에서 생성하며, `mutation_tags`에 `medical_record_korean`을 포함한다.
+
+설계 원칙:
+
+- canonical MRN의 구성요소(`hospital_code`, `year_token`, `dept_code`, `serial`, `check_digit`) 의미를 유지한다.
+- 실제 병원 내부 규칙을 추정하지 않고, synthetic rule-valid MRN만 재표현한다.
+- context 변형(L5)은 문장 전체를 바꾸고, 비-context 변형(L4)은 동일 MRN 신호를 다른 표기로 바꾼다.
+
+| mutation_name | 레벨 | 변형 내용 | 예시 |
+|---|---|---|---|
+| `medical_rec_label_*` | L4 | 의료기록번호 라벨 치환 (`의료기록번호`, `의무기록번호`, `환자번호`, `등록번호`, `차트번호`, `EMR No.`, `MRN`) | `의무기록번호: SNUH-2024-IM-123456-7` |
+| `medical_rec_field_split` | L4 | 병원코드/연도/진료과/일련번호/검증값 필드 분리 표기 | `병원코드: SNUH / 등록연도: 2024 / 진료과: IM / 일련번호: 123456 / 검증값: 7` |
+| `medical_rec_log_style` | L4 | 로그 key-value 표기 | `mrn="SNUH-2024-IM-123456-7" hospital_code=SNUH year_token=2024 dept=IM serial=123456 check_digit=7` |
+| `medical_rec_json_style` | L4 | JSON 객체 표기 | `{"medical_rec":"SNUH-2024-IM-123456-7","hospital_code":"SNUH",...}` |
+| `medical_rec_csv_row` | L4 | CSV header + row 표기 | `medical_rec,hospital_code,year_token,...` + `SNUH-2024-IM-123456-7,SNUH,2024,...` |
+| `medical_rec_sep_space` | L4 | 구분자 `-`를 공백으로 변경 | `SNUH 2024 IM 123456 7` |
+| `medical_rec_sep_slash` | L4 | 구분자 `-`를 `/`로 변경 | `SNUH/2024/IM/123456/7` |
+| `medical_rec_compact` | L4 | 구분자 제거 compact 표기 | `SNUH2024IM1234567` |
+| `medical_rec_ctx_emr` | L5 | EMR 조회 문맥 | `EMR 조회 결과, 홍길동 환자의 의료기록번호는 SNUH-2024-IM-123456-7입니다.` |
+| `medical_rec_ctx_reception` | L5 | 접수/등록 확인 문맥 | `접수 등록번호 확인: 홍길동 환자번호 SNUH-2024-IM-123456-7` |
+| `medical_rec_ctx_appointment` | L5 | 진료예약 확인 문맥 | `진료예약 확인, 홍길동님 차트번호 SNUH-2024-IM-123456-7` |
+| `medical_rec_ctx_lab_lookup` | L5 | 검사결과 조회 문맥 | `검사결과 조회 요청: 환자명 홍길동, MRN SNUH-2024-IM-123456-7` |
+| `medical_rec_ctx_prescription_lookup` | L5 | 처방내역 조회 문맥 | `처방내역 조회: 홍길동 환자 의료기록번호 SNUH-2024-IM-123456-7` |
+
+적용 위치:
+
+- 단일 PII 퍼저: `korean_pii_fuzzer_v4.py::_mutate(pid="medical_rec")`
+- Output 퍼저: `korean_pii_output_fuzzer_v4.py::_mutate_output(...)`
+- Healthcare bundle: `medical_rec_record`와 `medical_rec_validity` metadata를 함께 유지한다.
 
 ### `account` 생성/검증 설계 메모
 
@@ -314,7 +367,7 @@
 
 ## 개선 작업 원칙
 
-1. 먼저 bundle primary 또는 bundle 포함 타입부터 고친다: `account`, `medical_rec`, `emp_id`, `work_email`, `transaction` (`prescription` 완료).
+1. 먼저 bundle primary 또는 bundle 포함 타입부터 고친다: `account`, `emp_id`, `work_email`, `transaction` (`prescription`, `medical_rec` 완료).
 2. 한국 기준의 실제 제도/기관별 규칙이 있는 타입은 임의 숫자 생성을 줄이고, 기관별 pattern table 또는 checker를 둔다.
 3. profile bundle에서는 독립 `gen_*` 호출을 줄이고, 하나의 profile object에서 파생한다.
 4. 체크섬형은 generator와 validator를 같이 둔다.
@@ -328,7 +381,7 @@
 | 도메인 | 권장 구성 |
 |---|---|
 | CRM | `name`, corpus `address`, `phone`, 이름 기반 `email`, 은행명 포함 `account` 사용 가능. 단 account는 format+bank context 수준 |
-| Healthcare | `name`, `diagnosis`, `prescription`, `allergy`, `surgery`, `hospital`. `medical_rec`는 보강 후 사용 |
+| Healthcare | `name`, `diagnosis`, `prescription`, `allergy`, `surgery`, `hospital`, `medical_rec` (`medical_rec`: 병원별 synthetic rule + validator 기반 사용 가능) |
 | Finance | `name`, `rrn`, `card`, corpus `address`, 은행명 포함 `account` 사용. 단 account는 format+bank context 수준이고 `transaction`은 보강 후 사용 |
 | HR | `name`, `company`, `dept`, `job_title`, `hire_date`. `emp_id`, `work_email`은 보강 후 사용 |
 
@@ -336,6 +389,6 @@
 
 1. `account`: 은행별 실규칙과 bank context를 붙인다.
 2. `emp_id`: 회사별 사번 체계와 입사일을 연결한다.
-3. `medical_rec`: 병원별 MRN 규칙을 만든다.
+3. `medical_rec`: 병원별 synthetic MRN spec + check digit + validator 적용 완료, bundle metadata 연동 확장만 남음.
 4. `prescription`: 완료. 약품별 용량/빈도/경로/복용법/일수 table과 한국어 처방전 변형을 추가했다.
 5. `work_email`: 이름 romanization과 회사 도메인을 연결한다.
