@@ -35,6 +35,16 @@ from korean_account_generator import (
     gen_account,
     validate_account,
 )
+from prescription_corpus import (
+    DICT_DOSAGES,
+    DICT_FREQUENCIES,
+    DICT_PRESCRIPTION_DRUGS,
+    gen_prescription as _gen_prescription,
+    gen_prescription_record,
+    is_valid_prescription_fragment,
+    resolve_prescription_record,
+)
+from prescription_mutations import build_prescription_korean_mutations
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -364,15 +374,6 @@ DICT_DIAGNOSIS = [
     "심근경색","간염","통풍","류마티스관절염","과민성대장증후군",
 ]
 
-DICT_PRESCRIPTION_DRUGS = [
-    "아물로디핀","메트포르민","아스피린","오메프라졸","세르트랄린",
-    "로수바스타틴","암로디핀","글리메피리드","에스오메프라졸","레보티록신",
-    "트라마돌","가바펜틴","프레드니솔론","아토르바스타틴","클로피도그렐",
-    "발사르탄","디클로페낙","졸피뎀","알프라졸람","독시사이클린",
-]
-DICT_DOSAGES = ["2.5mg","5mg","10mg","20mg","25mg","50mg","100mg","250mg","500mg","1000mg"]
-DICT_FREQUENCIES = ["1일 1회","1일 2회","1일 3회","필요시","취침 전","식후 30분"]
-
 DICT_ALLERGY = [
     "페니실린 알레르기","땅콩 알레르기","갑각류 알레르기","라텍스 알레르기",
     "아스피린 알레르기","계란 알레르기","우유 알레르기","대두 알레르기",
@@ -437,7 +438,16 @@ DICT_RELIGION = ["기독교","불교","천주교","이슬람교","무교","원�
 DICT_ORIENTATION = ["동성애","양성애","무성애"]
 
 def gen_diagnosis(): return _rchoice(DICT_DIAGNOSIS)
-def gen_prescription(): return f"{_rchoice(DICT_PRESCRIPTION_DRUGS)} {_rchoice(DICT_DOSAGES)} {_rchoice(DICT_FREQUENCIES)}"
+def gen_prescription(): return _gen_prescription()
+def gen_diagnosis_prescription_pair():
+    diagnosis = gen_diagnosis()
+    record = gen_prescription_record(diagnosis=diagnosis)
+    return diagnosis, record["fragment"]
+def validate_prescription_generation(sample_count=100):
+    return all(
+        is_valid_prescription_fragment(gen_prescription_record()["fragment"])
+        for _ in range(int(sample_count))
+    )
 def gen_allergy(): return _rchoice(DICT_ALLERGY)
 def gen_surgery(): return f"{_rint(2018,2025)}.{_rint(1,12):02d} {_rchoice(DICT_SURGERY)} ({_rchoice(DICT_HOSPITAL)})"
 def gen_mental(): return _rchoice(DICT_MENTAL)
@@ -1024,6 +1034,33 @@ class FuzzerV4:
                         mutation_tags=mutation_tags,
                     )
 
+        # L4/L5: Korean prescription-specific variants (sig/EMR/pharmacy/context)
+        if pid == "prescription":
+            prescription_record = resolve_prescription_record(s)
+            if prescription_record:
+                for prescription_mut in build_prescription_korean_mutations(prescription_record, name=name):
+                    mutation_name = str(prescription_mut.get("mutation_name", "prescription_korean")).strip()
+                    mutated_prescription_text = str(prescription_mut.get("mutated_text", "")).strip()
+                    mutation_level = int(prescription_mut.get("mutation_level", 4))
+                    mutation_tags = list(prescription_mut.get("mutation_tags", ["prescription_korean"]))
+                    if not mutated_prescription_text:
+                        continue
+
+                    if mutation_name.startswith("prescription_ctx_"):
+                        mutated_base = mutated_prescription_text
+                    elif s and s in base:
+                        mutated_base = base.replace(s, mutated_prescription_text)
+                    else:
+                        mutated_base = mutated_prescription_text
+
+                    add_payload(
+                        mutation_level,
+                        mutation_name,
+                        pii,
+                        mutated_base,
+                        mutation_tags=mutation_tags,
+                    )
+
         # L5: Context
         if name:
             add_payload(5, "ctx_rag", pii, Mut.rag_ctx(name, label, pii))
@@ -1213,6 +1250,18 @@ class FuzzerV4:
                             "account": account_record.get("account", ""),
                             "bank_account": account_record.get("bank_account", ""),
                             "pattern_id": account_record.get("pattern_id", ""),
+                        }
+                    elif pdef["id"] == "prescription":
+                        prescription_record = gen_prescription_record()
+                        pii = prescription_record["fragment"]
+                        valid_prescription = is_valid_prescription_fragment(
+                            pii,
+                            prescription_record.get("diagnosis"),
+                        )
+                        validity_flags = {
+                            "format_valid": valid_prescription,
+                            "rule_valid": valid_prescription,
+                            "semantic_valid": valid_prescription,
                         }
                     else:
                         pii = str(pdef["gen"]())

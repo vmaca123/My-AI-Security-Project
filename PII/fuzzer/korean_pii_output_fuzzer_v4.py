@@ -39,7 +39,7 @@ from korean_pii_fuzzer_v4 import (
     gen_stock_account, gen_iban, gen_swift, gen_cvv, gen_expiry,
     gen_plate, gen_vehicle_reg, gen_car_insurance, gen_military,
     gen_visa, gen_insurance_policy, gen_cctv,
-    gen_diagnosis, gen_prescription, gen_allergy, gen_surgery,
+    gen_diagnosis, gen_allergy, gen_surgery,
     gen_mental, gen_disability, gen_hospital, gen_degree, gen_school,
     gen_job_title, gen_company, gen_department, gen_religion,
     gen_orientation, gen_hire_date, gen_retirement,
@@ -50,6 +50,8 @@ from korean_account_generator import (
     gen_account,
     validate_account,
 )
+from prescription_corpus import gen_prescription_for_diagnosis, resolve_prescription_record
+from prescription_mutations import build_prescription_korean_mutations
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -76,7 +78,7 @@ def _gen_bundle_crm(name):
     }
 
 def _gen_bundle_healthcare(name):
-    diag = gen_diagnosis(); presc = gen_prescription(); allergy = gen_allergy()
+    diag = gen_diagnosis(); presc = gen_prescription_for_diagnosis(diag); allergy = gen_allergy()
     hosp = gen_hospital(); med_rec = gen_medical_record(); phone = gen_phone()
     return {
         "name": name, "phone": phone, "diagnosis": diag, "prescription": presc,
@@ -550,7 +552,8 @@ class OutputFuzzerV4:
 
     def _mutate_output(self, pii_type, pii_str, base, name, tier,
                        domain, style, resp_len, resp_fmt, pii_count, vg,
-                       partial_mask=False, bundle_types=None, name_record=None, address_meta=None, account_meta=None, validity_flags=None):
+                       partial_mask=False, bundle_types=None, name_record=None, address_meta=None,
+                       account_meta=None, prescription_meta=None, validity_flags=None):
         s = str(pii_str)
         has_digits = any(c.isdigit() for c in s)
         has_dash = "-" in s
@@ -558,6 +561,7 @@ class OutputFuzzerV4:
                   response_format=resp_fmt, pii_count=pii_count, vg=vg,
                   contains_partial_mask=partial_mask, bundle_types=bundle_types)
         account_meta = account_meta or {}
+        prescription_meta = prescription_meta or {}
         validity_flags = validity_flags or {}
         kw.update({
             "format_valid": bool(validity_flags.get("format_valid", True)),
@@ -698,6 +702,48 @@ class OutputFuzzerV4:
                     mutation_tags=mutation_tags,
                 )
 
+        # L4/L5: Korean prescription-specific variants
+        prescription_display = ""
+        prescription_diagnosis = ""
+        if isinstance(prescription_meta, dict):
+            prescription_display = str(prescription_meta.get("prescription", "")).strip()
+            prescription_diagnosis = str(prescription_meta.get("diagnosis", "")).strip()
+        prescription_record = resolve_prescription_record(
+            prescription_display,
+            diagnosis=prescription_diagnosis or None,
+        )
+        if prescription_record:
+            for prescription_mut in build_prescription_korean_mutations(prescription_record, name=name):
+                mutation_name = str(prescription_mut.get("mutation_name", "prescription_korean")).strip()
+                mutated_prescription_text = str(prescription_mut.get("mutated_text", "")).strip()
+                mutation_level = int(prescription_mut.get("mutation_level", 4))
+                mutation_tags = list(prescription_mut.get("mutation_tags", ["prescription_korean"]))
+                if not mutated_prescription_text:
+                    continue
+
+                if mutation_name.startswith("prescription_ctx_"):
+                    mutated_base = mutated_prescription_text
+                elif prescription_display and prescription_display in base:
+                    mutated_base = base.replace(prescription_display, mutated_prescription_text)
+                else:
+                    continue
+
+                self._add(
+                    pii_type,
+                    mutation_level,
+                    mutation_name,
+                    prescription_display or mutated_prescription_text,
+                    mutated_base,
+                    tier,
+                    **kw,
+                    **addr_kw,
+                    name_id=name_id,
+                    name_tags=name_tags,
+                    original_name=name,
+                    mutated_name=name,
+                    mutation_tags=mutation_tags,
+                )
+
     def generate_all(self, count=10):
         self.payloads = []; self.n = 0; self._seen = set(); self.dropped_duplicate = 0
 
@@ -806,6 +852,10 @@ class OutputFuzzerV4:
                     "bank_account": str(bundle.get("bank_account", "")),
                     "pattern_id": str(bundle.get("account_pattern_id", "")),
                 }
+                prescription_meta = {
+                    "prescription": str(bundle.get("prescription", "")),
+                    "diagnosis": str(bundle.get("diagnosis", "")),
+                }
                 validity_flags = {"format_valid": True, "rule_valid": True, "semantic_valid": True}
                 if account_meta["bank"] and account_meta["account"]:
                     account_validation = validate_account(account_meta)
@@ -858,6 +908,7 @@ class OutputFuzzerV4:
                         name_record=name_record,
                         address_meta=address_meta if address_value and address_value in base else None,
                         account_meta=account_meta,
+                        prescription_meta=prescription_meta,
                         validity_flags=validity_flags,
                     )
 

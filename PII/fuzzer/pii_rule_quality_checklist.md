@@ -39,7 +39,7 @@
 | 번들 | 포함 타입 | 현재 리스크 |
 |---|---|---|
 | CRM | `phone`, `email`, `address`, `account` | `address`는 seed/corpus 강제 필요 |
-| Healthcare | `diagnosis`, `prescription`, `allergy`, `hospital`, `medical_rec` | `prescription`, `medical_rec`가 P0 |
+| Healthcare | `diagnosis`, `prescription`, `allergy`, `hospital`, `medical_rec` | `medical_rec`가 P0, `prescription`은 보강 완료 |
 | Finance | `rrn`, `card`, `account`, `transaction` | `transaction`이 P0 |
 | HR | `emp_id`, `dept`, `company`, `hire_date`, `work_email` | `emp_id`, `work_email`이 P0 |
 
@@ -109,7 +109,7 @@
 |---|---|---|---|---|---|
 | `account` 계좌번호 | 은행별 패턴 table 기반 생성 + `bank/bank_code/account/bank_account/pattern_id` record 반환, validator로 bank-account 매핑 검증 | 대충 형식만 유효 | `korean_account_generator.py`, `korean_pii_fuzzer_v4.py`, output CRM/Finance bundle | 번호 단독 임의 block과 은행명 context 유실은 해소. 단, 공식 checksum/상품코드/실계좌 검증은 없음 | 공개 근거가 명확한 은행별 패턴을 더 보강하고, 공식 checksum 또는 상품코드 규칙이 확인되는 경우에만 `충분히 유효`로 승격 |
 | `transaction` 거래내역 | 2026년 임의 날짜 + 5개 가맹점 + 금액 | 보강 필요 | `korean_pii_fuzzer_v4.py:305`, Finance bundle | 현재일 이후 미래 날짜 가능, 카드/계좌/가맹점/MCC와 무관 | 기준일 이전 날짜, 업종별 금액 분포, 계좌/카드와 연결 |
-| `prescription` 처방전 | 약품 20개, 용량 10개, 빈도 6개를 무작위 결합 | 보강 필요 | `korean_pii_fuzzer_v4.py:365`, `korean_pii_fuzzer_v4.py:438`, Healthcare bundle | 약품별 허용 용량/빈도가 맞지 않을 수 있음 | 약품별 dose/frequency table, 진단명과 처방 연결 |
+| `prescription` 처방전 | `prescription_corpus.py`의 약품별 dose/frequency/route/method/supply/diagnosis table 기반 생성 + `prescription_mutations.py`의 한국어 처방전 전용 L4/L5 변형 | 충분히 유효 | `prescription_corpus.py`, `prescription_mutations.py`, `korean_pii_fuzzer_v4.py`, Healthcare bundle | synthetic 처방 조각이며 실제 처방 권고/실처방 검증은 하지 않음 | 약품군/진단군 확대, 병원/진료과/처방일자 profile 연결 |
 | `medical_rec` 의료기록번호 | `MRN-YYYY-6digits` | 보강 필요 | `korean_pii_fuzzer_v4.py:313`, Healthcare bundle | 병원별 MRN 규칙이 없음 | 병원별 prefix/자리수/연도 포함 여부를 profile schema로 관리 |
 | `emp_id` 사번 | `EMP/사번-YYYY-4digits` | 보강 필요 | `korean_pii_fuzzer_v4.py:326`, HR bundle primary | 회사별 사번 체계 없음, 입사일과 불일치 가능 | 회사별 prefix, 입사연도, 순번 규칙으로 생성 |
 | `work_email` 업무이메일 | 3개 local-part + 4개 회사 도메인 | 보강 필요 | `korean_pii_fuzzer_v4.py:328`, HR bundle | 이름/회사와 불일치 가능 | 이름 romanization 기반 local-part, 회사 도메인 mapping |
@@ -154,6 +154,44 @@
 - `real_account_valid`: 실계좌 존재 여부는 인증된 금융 API와 법적/윤리적 검토가 필요한 영역이므로 synthetic fuzzer에서 조회하지 않는다.
 
 따라서 `account`는 `보강 필요`에서 벗어나 번호 단독 임의 block 문제와 bundle context 유실 문제는 해결했지만, 분류는 `대충 형식만 유효`로 둔다. 나중에 공식 근거가 있는 은행별 checksum/상품코드 규칙이 확인되면 해당 은행 profile만 선택적으로 승격한다.
+
+### `prescription` 생성/변형 설계 메모
+
+`prescription`은 `prescription_corpus.py`로 분리해서 관리한다. 이 모듈은 실제 진료나 복약 지시를 생성하는 것이 아니라, downstream PII 평가에 필요한 synthetic 처방전 조각을 만드는 것이 목적이다. 따라서 약품명, 용량, 빈도, 투여경로, 복용법, 처방일수는 모두 약품별 허용 table 안에서만 조합한다.
+
+현재 생성기가 보장하는 것:
+
+- 약품별 허용 조합: `drug -> doses/frequencies/routes/methods/supplies/diagnoses` table에 정의된 값만 사용한다.
+- 진단명 연결: Healthcare bundle에서는 `gen_diagnosis()` 결과를 `gen_prescription_for_diagnosis()`에 전달해 고혈압-암로디핀/발사르탄, 당뇨-메트포르민/글리메피리드, 위염/역류성식도염-PPI 계열처럼 연결 가능한 조합을 우선 생성한다.
+- resolver/validator: 생성된 fragment는 `resolve_prescription_record()`와 `is_valid_prescription_fragment()`로 table 내 허용 조합인지 확인할 수 있다.
+- 출력 형태: `메트포르민 500mg 경구 1일 2회 식후 30분 30일분`처럼 업무 데이터에서 볼 법한 한 줄 처방 조각으로 생성한다.
+
+현재 생성기가 보장하지 않는 것:
+
+- 실제 환자에게 맞는 처방 적정성, 금기, 병용금기, 체중/연령별 용량 검증은 하지 않는다.
+- 실제 병원 처방전 서식, DUR, 보험 급여 기준, 처방전 발행 규격 검증은 하지 않는다.
+- 실제 처방 권고가 아니라 synthetic fuzzer fragment다.
+
+#### `prescription` 한국어 변형 상세
+
+모든 변형은 약품-용량-빈도-경로-일수의 의미 연결을 유지하고, `mutation_tags`에 `prescription_korean`을 포함한다.
+
+| mutation_name | 레벨 | 변형 내용 | 예시 |
+|---|---|---|---|
+| `prescription_field_split` | L4 | 약품/용량/투여/기간 필드를 분리 | `약품: 메트포르민 / 용량: 500mg / 투여: 경구 1일 2회 식후 30분 / 기간: 30일분` |
+| `prescription_emr_line` | L4 | EMR/Rx 라인처럼 `Rx)`, `PO`, `bid`, `pc`, `30D` 약어 사용 | `Rx) 메트포르민 500mg PO bid pc x 30D` |
+| `prescription_korean_sig` | L4 | `하루 2번`, `식후 30분`처럼 한국어 복약 sig로 변형 | `메트포르민 500mg 하루 2번 식후 30분, 30일분` |
+| `prescription_abbrev_route` | L4 | 경로/빈도/복용법을 약어로 압축 | `메트포르민 500mg PO bid pc 30D` |
+| `prescription_compact` | L4 | 약품 alias와 slash 기반 compact 표기 | `MTF500mg/PO/bid/pc/30D` |
+| `prescription_pharmacy_label` | L4 | 약국 조제내역 라벨 형태 | `조제내역: 메트포르민 500mg, 경구 1일 2회, 30일분` |
+| `prescription_ctx_emr` | L5 | 환자명 포함 EMR 문맥 | `홍길동 환자 처방내역: 메트포르민 500mg 경구 1일 2회 식후 30분 30일분` |
+| `prescription_ctx_refill` | L5 | 재처방/확인 문맥 | `홍길동님 재처방 확인: 메트포르민 500mg 경구 1일 2회 식후 30분 30일분` |
+
+적용 위치:
+
+- 단일 PII 퍼저: `korean_pii_fuzzer_v4.py::_mutate(pid="prescription")`
+- Output 퍼저: `korean_pii_output_fuzzer_v4.py::_mutate_output(...)`
+- Healthcare bundle: `diagnosis`를 먼저 생성한 뒤 해당 진단군과 연결 가능한 `prescription`을 생성한다.
 
 ## P1: 번들과 병행해서 보강
 
@@ -231,7 +269,7 @@
 
 ## 개선 작업 원칙
 
-1. 먼저 bundle primary 또는 bundle 포함 타입부터 고친다: `account`, `medical_rec`, `emp_id`, `work_email`, `prescription`, `transaction`.
+1. 먼저 bundle primary 또는 bundle 포함 타입부터 고친다: `account`, `medical_rec`, `emp_id`, `work_email`, `transaction` (`prescription` 완료).
 2. 한국 기준의 실제 제도/기관별 규칙이 있는 타입은 임의 숫자 생성을 줄이고, 기관별 pattern table 또는 checker를 둔다.
 3. profile bundle에서는 독립 `gen_*` 호출을 줄이고, 하나의 profile object에서 파생한다.
 4. 체크섬형은 generator와 validator를 같이 둔다.
@@ -245,7 +283,7 @@
 | 도메인 | 권장 구성 |
 |---|---|
 | CRM | `name`, corpus `address`, `phone`, 이름 기반 `email`, 은행명 포함 `account` 사용 가능. 단 account는 format+bank context 수준 |
-| Healthcare | `name`, `diagnosis`, `allergy`, `surgery`, `hospital`. `prescription`, `medical_rec`는 보강 후 사용 |
+| Healthcare | `name`, `diagnosis`, `prescription`, `allergy`, `surgery`, `hospital`. `medical_rec`는 보강 후 사용 |
 | Finance | `name`, `rrn`, `card`, corpus `address`, 은행명 포함 `account` 사용. 단 account는 format+bank context 수준이고 `transaction`은 보강 후 사용 |
 | HR | `name`, `company`, `dept`, `job_title`, `hire_date`. `emp_id`, `work_email`은 보강 후 사용 |
 
@@ -254,5 +292,5 @@
 1. `account`: 은행별 실규칙과 bank context를 붙인다.
 2. `emp_id`: 회사별 사번 체계와 입사일을 연결한다.
 3. `medical_rec`: 병원별 MRN 규칙을 만든다.
-4. `prescription`: 약품별 용량/빈도 table을 만든다.
+4. `prescription`: 완료. 약품별 용량/빈도/경로/복용법/일수 table과 한국어 처방전 변형을 추가했다.
 5. `work_email`: 이름 romanization과 회사 도메인을 연결한다.
