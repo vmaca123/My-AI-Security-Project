@@ -50,6 +50,12 @@ from korean_account_generator import (
     gen_account,
     validate_account,
 )
+from korean_transaction_generator import (
+    build_transaction_korean_mutations,
+    format_transaction_record,
+    gen_transaction_record,
+    validate_transaction_record,
+)
 from prescription_corpus import gen_prescription_for_diagnosis, resolve_prescription_record
 from prescription_mutations import build_prescription_korean_mutations
 
@@ -91,7 +97,10 @@ def _gen_bundle_finance(name):
     rrn = gen_rrn(); card = gen_card(); acct = gen_account()
     account_text = str(acct.get("account", ""))
     bank_account_text = format_account_display(acct)
-    txn = gen_transaction(); phone = gen_phone(); addr = gen_address()
+    txn_record = gen_transaction_record(card=card, account_record=acct)
+    txn = format_transaction_record(txn_record)
+    txn_validation = validate_transaction_record(txn_record)
+    phone = gen_phone(); addr = gen_address()
     return {
         "name": name, "phone": phone, "addr": addr, "rrn": rrn, "card": card,
         "bank": str(acct.get("bank", "")),
@@ -100,6 +109,8 @@ def _gen_bundle_finance(name):
         "bank_account": bank_account_text,
         "account_pattern_id": str(acct.get("pattern_id", "")),
         "transaction": txn,
+        "transaction_record": txn_record,
+        "transaction_validity": txn_validation,
         "primary_pii": bank_account_text, "primary_label": "계좌번호", "primary_label_en": "account",
         "bundle_types": ["rrn","card","account","transaction"], "pii_count": 4,
     }
@@ -553,7 +564,7 @@ class OutputFuzzerV4:
     def _mutate_output(self, pii_type, pii_str, base, name, tier,
                        domain, style, resp_len, resp_fmt, pii_count, vg,
                        partial_mask=False, bundle_types=None, name_record=None, address_meta=None,
-                       account_meta=None, prescription_meta=None, validity_flags=None):
+                       account_meta=None, transaction_meta=None, prescription_meta=None, validity_flags=None):
         s = str(pii_str)
         has_digits = any(c.isdigit() for c in s)
         has_dash = "-" in s
@@ -561,6 +572,7 @@ class OutputFuzzerV4:
                   response_format=resp_fmt, pii_count=pii_count, vg=vg,
                   contains_partial_mask=partial_mask, bundle_types=bundle_types)
         account_meta = account_meta or {}
+        transaction_meta = transaction_meta or {}
         prescription_meta = prescription_meta or {}
         validity_flags = validity_flags or {}
         kw.update({
@@ -691,6 +703,43 @@ class OutputFuzzerV4:
                     mutation_level,
                     mutation_name,
                     account_display or pii_str,
+                    mutated_base,
+                    tier,
+                    **kw,
+                    **addr_kw,
+                    name_id=name_id,
+                    name_tags=name_tags,
+                    original_name=name,
+                    mutated_name=name,
+                    mutation_tags=mutation_tags,
+                )
+
+        # L4/L5: Korean transaction-specific variants
+        transaction_record = transaction_meta.get("record", {}) if isinstance(transaction_meta, dict) else {}
+        transaction_display = ""
+        if isinstance(transaction_meta, dict):
+            transaction_display = str(transaction_meta.get("transaction", "")).strip()
+        if isinstance(transaction_record, dict) and transaction_record:
+            for transaction_mut in build_transaction_korean_mutations(transaction_record, name=name):
+                mutation_name = str(transaction_mut.get("mutation_name", "transaction_korean")).strip()
+                mutated_transaction_text = str(transaction_mut.get("mutated_text", "")).strip()
+                mutation_level = int(transaction_mut.get("mutation_level", 4))
+                mutation_tags = list(transaction_mut.get("mutation_tags", ["transaction_korean"]))
+                if not mutated_transaction_text:
+                    continue
+
+                if mutation_name.startswith("transaction_ctx_"):
+                    mutated_base = mutated_transaction_text
+                elif transaction_display and transaction_display in base:
+                    mutated_base = base.replace(transaction_display, mutated_transaction_text)
+                else:
+                    continue
+
+                self._add(
+                    pii_type,
+                    mutation_level,
+                    mutation_name,
+                    transaction_display or mutated_transaction_text,
                     mutated_base,
                     tier,
                     **kw,
@@ -852,6 +901,10 @@ class OutputFuzzerV4:
                     "bank_account": str(bundle.get("bank_account", "")),
                     "pattern_id": str(bundle.get("account_pattern_id", "")),
                 }
+                transaction_meta = {
+                    "record": bundle.get("transaction_record", {}),
+                    "transaction": str(bundle.get("transaction", "")),
+                }
                 prescription_meta = {
                     "prescription": str(bundle.get("prescription", "")),
                     "diagnosis": str(bundle.get("diagnosis", "")),
@@ -864,6 +917,14 @@ class OutputFuzzerV4:
                         "rule_valid": account_validation.get("rule_valid", False),
                         "semantic_valid": account_validation.get("semantic_valid", False),
                     }
+                if domain == "finance":
+                    transaction_validation = bundle.get("transaction_validity", {})
+                    if isinstance(transaction_validation, dict):
+                        validity_flags = {
+                            "format_valid": bool(validity_flags["format_valid"] and transaction_validation.get("format_valid", False)),
+                            "rule_valid": bool(validity_flags["rule_valid"] and transaction_validation.get("rule_valid", False)),
+                            "semantic_valid": bool(validity_flags["semantic_valid"] and transaction_validation.get("semantic_valid", False)),
+                        }
 
                 for tpl_key, tpl_list in templates.items():
                     # Determine style, length, format
@@ -908,6 +969,7 @@ class OutputFuzzerV4:
                         name_record=name_record,
                         address_meta=address_meta if address_value and address_value in base else None,
                         account_meta=account_meta,
+                        transaction_meta=transaction_meta,
                         prescription_meta=prescription_meta,
                         validity_flags=validity_flags,
                     )

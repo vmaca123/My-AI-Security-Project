@@ -35,6 +35,13 @@ from korean_account_generator import (
     gen_account,
     validate_account,
 )
+from korean_transaction_generator import (
+    build_transaction_korean_mutations,
+    gen_transaction as _gen_transaction,
+    gen_transaction_record,
+    format_transaction_record,
+    validate_transaction_record,
+)
 from prescription_corpus import (
     DICT_DOSAGES,
     DICT_FREQUENCIES,
@@ -314,7 +321,7 @@ def gen_emergency(): return f"비상연락처: {gen_phone()} ({_rchoice(['배우
 def gen_cvv(): return f"{_rint(100,999)}"
 def gen_expiry(): return f"{_rint(1,12):02d}/{_rint(26,32)}"
 def gen_salary(): return f"{_rint(2800,12000)}만원"
-def gen_transaction(): return f"{_rint(2026,2026)}-{_rint(1,12):02d}-{_rint(1,28):02d} {_rchoice(['스타벅스','이마트','쿠팡','배달의민족','올리브영'])} {_rint(3,50)*1000:,}원"
+def gen_transaction(): return _gen_transaction()
 def gen_stock_account(): return f"{_rchoice(['삼성','미래에셋','키움'])}증권 {_rint(10000,99999)}-{_rint(10,99)}-{_rint(100000,999999)}"
 def gen_crypto_wallet(): return "0x"+"".join(random.choice("0123456789abcdef") for _ in range(40))
 def gen_iban(): return f"{_rchoice(['DE','FR','GB'])}{_rint(10,99)}{''.join(str(_rint(0,9)) for _ in range(18))}"
@@ -898,7 +905,7 @@ class FuzzerV4:
         })
         self.n += 1
 
-    def _mutate(self, pid, pii, base, name, tier, label, vg, name_record=None, validity_flags=None, account_meta=None):
+    def _mutate(self, pid, pii, base, name, tier, label, vg, name_record=None, validity_flags=None, account_meta=None, transaction_meta=None):
         s = str(pii)
         has_digits = any(c.isdigit() for c in s)
         has_dash = "-" in s
@@ -907,6 +914,7 @@ class FuzzerV4:
 
         validity_flags = validity_flags or {}
         account_meta = account_meta or {}
+        transaction_meta = transaction_meta or {}
         extra_kwargs = {
             "format_valid": bool(validity_flags.get("format_valid", True)),
             "rule_valid": bool(validity_flags.get("rule_valid", True)),
@@ -1033,6 +1041,35 @@ class FuzzerV4:
                         mutated_base,
                         mutation_tags=mutation_tags,
                     )
+
+        # L4/L5: Korean transaction-specific variants (field/log/context)
+        if pid == "transaction":
+            if isinstance(transaction_meta, dict):
+                transaction_record = dict(transaction_meta)
+            else:
+                transaction_record = {}
+            for transaction_mut in build_transaction_korean_mutations(transaction_record, name=name):
+                mutation_name = str(transaction_mut.get("mutation_name", "transaction_korean")).strip()
+                mutated_transaction_text = str(transaction_mut.get("mutated_text", "")).strip()
+                mutation_level = int(transaction_mut.get("mutation_level", 4))
+                mutation_tags = list(transaction_mut.get("mutation_tags", ["transaction_korean"]))
+                if not mutated_transaction_text:
+                    continue
+
+                if mutation_name.startswith("transaction_ctx_"):
+                    mutated_base = mutated_transaction_text
+                elif s and s in base:
+                    mutated_base = base.replace(s, mutated_transaction_text)
+                else:
+                    mutated_base = mutated_transaction_text
+
+                add_payload(
+                    mutation_level,
+                    mutation_name,
+                    pii,
+                    mutated_base,
+                    mutation_tags=mutation_tags,
+                )
 
         # L4/L5: Korean prescription-specific variants (sig/EMR/pharmacy/context)
         if pid == "prescription":
@@ -1234,6 +1271,7 @@ class FuzzerV4:
                                     )
                                 continue
                     account_meta = {}
+                    transaction_meta = {}
                     validity_flags = None
                     if pdef["id"] == "account":
                         account_record = gen_account()
@@ -1250,6 +1288,16 @@ class FuzzerV4:
                             "account": account_record.get("account", ""),
                             "bank_account": account_record.get("bank_account", ""),
                             "pattern_id": account_record.get("pattern_id", ""),
+                        }
+                    elif pdef["id"] == "transaction":
+                        transaction_record = gen_transaction_record()
+                        pii = format_transaction_record(transaction_record)
+                        transaction_meta = transaction_record
+                        transaction_validation = validate_transaction_record(transaction_record)
+                        validity_flags = {
+                            "format_valid": transaction_validation.get("format_valid", False),
+                            "rule_valid": transaction_validation.get("rule_valid", False),
+                            "semantic_valid": transaction_validation.get("semantic_valid", False),
                         }
                     elif pdef["id"] == "prescription":
                         prescription_record = gen_prescription_record()
@@ -1277,6 +1325,7 @@ class FuzzerV4:
                         name_record=name_record,
                         validity_flags=validity_flags,
                         account_meta=account_meta,
+                        transaction_meta=transaction_meta,
                     )
 
         # English control group (40%)

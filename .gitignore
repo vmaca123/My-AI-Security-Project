@@ -5,3 +5,4 @@ __pycache__/
 PII/fuzzer/corpus_build/korean_addresses/raw/*.zip
 PII/fuzzer/data/*.jsonl
 PII/fuzzer/seeds/name/name_input_queue_202604_v1.jsonl
+PII/fuzzer/smoke_*.json

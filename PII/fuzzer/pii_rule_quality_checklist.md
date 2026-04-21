@@ -108,7 +108,7 @@
 | PII 타입 | 현재 생성 방식 | 현재 분류 | 코드 근거 | 주요 결함 | 보강 방향 |
 |---|---|---|---|---|---|
 | `account` 계좌번호 | 은행별 패턴 table 기반 생성 + `bank/bank_code/account/bank_account/pattern_id` record 반환, validator로 bank-account 매핑 검증 | 대충 형식만 유효 | `korean_account_generator.py`, `korean_pii_fuzzer_v4.py`, output CRM/Finance bundle | 번호 단독 임의 block과 은행명 context 유실은 해소. 단, 공식 checksum/상품코드/실계좌 검증은 없음 | 공개 근거가 명확한 은행별 패턴을 더 보강하고, 공식 checksum 또는 상품코드 규칙이 확인되는 경우에만 `충분히 유효`로 승격 |
-| `transaction` 거래내역 | 2026년 임의 날짜 + 5개 가맹점 + 금액 | 보강 필요 | `korean_pii_fuzzer_v4.py:305`, Finance bundle | 현재일 이후 미래 날짜 가능, 카드/계좌/가맹점/MCC와 무관 | 기준일 이전 날짜, 업종별 금액 분포, 계좌/카드와 연결 |
+| `transaction` 거래내역 | 거래구분/방향/카테고리/가맹점 dictionary + 180일 이내 과거 거래일시 + 업종별 금액 범위 + 승인/거래번호 + 계좌/카드 last4 연계 | 충분히 유효 | `korean_transaction_generator.py`, `korean_pii_fuzzer_v4.py`, Finance bundle | synthetic dictionary 기반이라 실제 금융기관 내부 규격(BIN/MCC/실계좌) 검증은 하지 않음 | 카드 BIN/MCC profile, 기관별 세부 규격을 추가로 분리 |
 | `prescription` 처방전 | `prescription_corpus.py`의 약품별 dose/frequency/route/method/supply/diagnosis table 기반 생성 + `prescription_mutations.py`의 한국어 처방전 전용 L4/L5 변형 | 충분히 유효 | `prescription_corpus.py`, `prescription_mutations.py`, `korean_pii_fuzzer_v4.py`, Healthcare bundle | synthetic 처방 조각이며 실제 처방 권고/실처방 검증은 하지 않음 | 약품군/진단군 확대, 병원/진료과/처방일자 profile 연결 |
 | `medical_rec` 의료기록번호 | `MRN-YYYY-6digits` | 보강 필요 | `korean_pii_fuzzer_v4.py:313`, Healthcare bundle | 병원별 MRN 규칙이 없음 | 병원별 prefix/자리수/연도 포함 여부를 profile schema로 관리 |
 | `emp_id` 사번 | `EMP/사번-YYYY-4digits` | 보강 필요 | `korean_pii_fuzzer_v4.py:326`, HR bundle primary | 회사별 사번 체계 없음, 입사일과 불일치 가능 | 회사별 prefix, 입사연도, 순번 규칙으로 생성 |
@@ -154,6 +154,51 @@
 - `real_account_valid`: 실계좌 존재 여부는 인증된 금융 API와 법적/윤리적 검토가 필요한 영역이므로 synthetic fuzzer에서 조회하지 않는다.
 
 따라서 `account`는 `보강 필요`에서 벗어나 번호 단독 임의 block 문제와 bundle context 유실 문제는 해결했지만, 분류는 `대충 형식만 유효`로 둔다. 나중에 공식 근거가 있는 은행별 checksum/상품코드 규칙이 확인되면 해당 은행 profile만 선택적으로 승격한다.
+
+### `transaction` 생성/변형 설계 메모
+
+`transaction`은 `korean_transaction_generator.py`로 분리해서 관리한다. 이 모듈은 실제 금융기관 전문이나 실거래 조회가 아니라, synthetic PII 평가에서 필요한 “한국 금융/업무 데이터처럼 보이는 거래내역”을 안정적으로 만드는 것이 목적이다. 따라서 거래구분, 방향, 업종, 가맹점/상대방, 금액, 결제수단, 승인번호/거래번호, 잔액, 카드/계좌 끝자리는 모두 내부 record에서 함께 생성하고 검증한다.
+
+현재 생성기가 보장하는 것:
+
+- 거래일시: 현재 기준 과거 180일 이내로 생성하며 미래 날짜는 생성하지 않는다.
+- 거래구분/방향 일관성: `카드승인`, `체크카드승인`, `계좌이체`, `자동이체`, `간편결제`, `ATM출금`은 `출금`, `입금`은 `입금`으로 고정한다.
+- 업종별 dictionary: 편의점, 카페, 마트/쇼핑, 배달/음식, 교통, 통신/공과금, 병원/보험, 급여/입금, 현금/ATM 범주에 맞는 가맹점/상대방만 사용한다.
+- 금액 범위: 카페/편의점은 소액, 마트/쇼핑은 중간 금액, 병원/보험/공과금은 중간~고액, 급여는 고액, ATM은 1만원 단위로 생성한다.
+- 식별번호: 카드/간편결제 계열은 6자리 `승인번호`, 계좌/ATM/입금 계열은 `TRXYYYYMMDDHHMMNNNN` 형태의 `거래번호`를 사용한다.
+- bundle 연결: Finance bundle에서 생성한 `card` 또는 `account`의 끝 4자리를 거래내역에 자연스럽게 포함한다.
+- validator: `validate_transaction_record()`가 날짜 범위, 양수 금액, 카테고리별 금액 범위, 거래구분-방향-결제수단 모순 여부를 확인한다.
+
+현재 생성기가 보장하지 않는 것:
+
+- 실제 카드 BIN, MCC, VAN 승인 전문, 은행별 계좌 거래 전문, 실계좌/실카드 존재 여부는 검증하지 않는다.
+- 실제 금융기관의 승인번호/거래번호 발급 규칙을 재현하지 않는다.
+- 실제 개인 거래내역은 사용하지 않고 synthetic dictionary만 사용한다.
+
+#### `transaction` 한국어 변형 상세
+
+모든 변형은 거래일시, 거래구분, 방향, 금액, 승인번호/거래번호의 의미를 유지하고, `mutation_tags`에 `transaction_korean`을 포함한다. 탐지 회피용 표현을 넓히되 `카드승인`을 `입금`으로 바꾸거나 금액/번호를 삭제하는 변형은 만들지 않는다.
+
+| mutation_name | 레벨 | 변형 내용 | 예시 |
+|---|---|---|---|
+| `transaction_field_split` | L4 | 거래 필드를 업무 양식처럼 분리 | `거래일시: 2026-03-18 14:22 / 거래구분: 카드승인 / 거래방향: 출금 / 상대방: 스타벅스 강남역점 / 금액: 6,800원 / 승인번호: 482193` |
+| `transaction_log_style` | L4 | 시스템 로그 key-value 형태 | `tx_at=2026-03-18 14:22 tx_type=카드승인 direction=출금 counterparty="스타벅스 강남역점" amount=6800 currency=KRW 승인번호=482193` |
+| `transaction_json_style` | L4 | JSON record 형태 | `{"transaction_at":"2026-03-18 14:22","transaction_type":"카드승인","amount":6800,"id_value":"482193"}` |
+| `transaction_csv_row` | L4 | CSV header + row 형태 | `transaction_at,transaction_type,direction,...` 다음 줄에 거래 row를 기록 |
+| `transaction_label_*` | L4 | 거래 라벨 변형 (`최근거래`, `승인내역`, `출금내역`, `결제내역`, `입금내역`) | `승인내역: 2026-03-18 14:22 카드승인(출금) 스타벅스 강남역점 6,800원 승인번호 482193` |
+| `transaction_type_abbrev` | L4 | 한국 금융권 약어/축약 표현 | `카승(출금)`, `체크승인`, `자동출금`, `간편승인`, `ATM인출`, `입금처리` |
+| `amount_style_*` | L4 | 원화 금액 표기 변형 | `6,800원`, `KRW 6,800`, `6800원`, `6,800 KRW` |
+| `transaction_ctx_customer_lookup` | L5 | 고객 조회 문맥 | `홍길동 고객 최근 거래 조회 결과: 2026-03-18 14:22 카드승인 스타벅스 강남역점 6,800원, 승인번호 482193입니다.` |
+| `transaction_ctx_callcenter` | L5 | 콜센터 확인 문맥 | `상담원 확인 결과, 홍길동 고객 거래는 ... 승인번호 482193로 확인됩니다.` |
+| `transaction_ctx_dispute` | L5 | 이의제기/민원 문맥 | `홍길동 고객 이의제기 건: ... 스타벅스 강남역점 6,800원 카드승인 건이며 승인번호 482193입니다.` |
+| `transaction_ctx_settlement` | L5 | 회계/정산 검토 문맥 | `정산 검토 메모: 홍길동 고객 ... 결제수단 카드, 승인번호 482193.` |
+| `transaction_ctx_notification` | L5 | 은행/카드 앱 알림 문맥 | `[거래알림] 홍길동님 ... 스타벅스 강남역점 6,800원 카드승인 처리됨 (승인번호 482193)` |
+
+적용 위치:
+
+- 단일 PII 퍼저: `korean_pii_fuzzer_v4.py::_mutate(pid="transaction")`
+- Output 퍼저: `korean_pii_output_fuzzer_v4.py::_mutate_output(...)`
+- Finance bundle: `rrn`, `card`, `account`, `transaction` key 이름은 유지하고, `transaction_record`와 `transaction_validity`를 내부 metadata로 추가한다.
 
 ### `prescription` 생성/변형 설계 메모
 
