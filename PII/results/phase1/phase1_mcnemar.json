@@ -1,0 +1,47 @@
+{
+  "A_Baseline_vs_B_Baseline_L4": {
+    "b": 0,
+    "c": 1081,
+    "n": 1081,
+    "chi2_edwards": 1079.001,
+    "p_value": 1.21e-236,
+    "test": "chi-sq approx (df=1, continuity corrected)",
+    "comparison": "A_Baseline vs B_Baseline_L4"
+  },
+  "A_Baseline_vs_C_With_L0": {
+    "b": 0,
+    "c": 1417,
+    "n": 1417,
+    "chi2_edwards": 1415.001,
+    "p_value": 1.16e-309,
+    "test": "chi-sq approx (df=1, continuity corrected)",
+    "comparison": "A_Baseline vs C_With_L0"
+  },
+  "B_Baseline_L4_vs_C_With_L0": {
+    "b": 291,
+    "c": 627,
+    "n": 918,
+    "chi2_edwards": 122.249,
+    "p_value": 2.04e-28,
+    "test": "chi-sq approx (df=1, continuity corrected)",
+    "comparison": "B_Baseline_L4 vs C_With_L0"
+  },
+  "C_With_L0_vs_D_Full": {
+    "b": 0,
+    "c": 291,
+    "n": 291,
+    "chi2_edwards": 289.003,
+    "p_value": 8.2e-65,
+    "test": "chi-sq approx (df=1, continuity corrected)",
+    "comparison": "C_With_L0 vs D_Full"
+  },
+  "A_Baseline_vs_D_Full": {
+    "b": 0,
+    "c": 1708,
+    "n": 1708,
+    "chi2_edwards": 1706.001,
+    "p_value": 0.0,
+    "test": "chi-sq approx (df=1, continuity corrected)",
+    "comparison": "A_Baseline vs D_Full"
+  }
+}

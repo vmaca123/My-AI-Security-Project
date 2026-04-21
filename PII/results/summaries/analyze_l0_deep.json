@@ -1,0 +1,382 @@
+{
+  "case_outcomes": {
+    "l0_solo": 1444,
+    "l0_with_others": 1652,
+    "others_only": 6302,
+    "all_missed": 602
+  },
+  "l0_solo_by_pii": {
+    "session": 67,
+    "gps": 63,
+    "court": 62,
+    "crime": 61,
+    "family": 58,
+    "surgery": 57,
+    "prescription": 54,
+    "gpa": 48,
+    "biometric": 46,
+    "body": 45,
+    "jwt": 44,
+    "crypto": 44,
+    "job_title": 42,
+    "credit_score": 42,
+    "retirement": 40,
+    "dob": 39,
+    "grad_year": 39,
+    "disability": 37,
+    "allergy": 36,
+    "blood": 36,
+    "company": 36,
+    "hire_date": 35,
+    "marital": 35,
+    "dept": 35,
+    "salary": 35,
+    "course_grade": 31,
+    "degree": 28,
+    "ssh": 27,
+    "diagnosis": 25,
+    "gender": 24,
+    "religion": 23,
+    "orientation": 22,
+    "school": 16,
+    "political": 15,
+    "mental": 13,
+    "cctv": 10,
+    "emp_id": 9,
+    "ip": 8,
+    "nationality": 6,
+    "vin": 6,
+    "iban": 5,
+    "face_id": 5,
+    "aws_secret": 4,
+    "student_id": 4,
+    "passport": 4,
+    "aws_key": 2,
+    "car_ins": 2,
+    "transaction": 2,
+    "visa": 2,
+    "social": 2,
+    "mac": 2,
+    "loan": 1,
+    "work_addr": 1,
+    "이름": 1,
+    "expiry": 1,
+    "voter": 1,
+    "rrn": 1,
+    "biz_reg": 1,
+    "password": 1,
+    "stock": 1,
+    "work_phone": 1,
+    "plate": 1
+  },
+  "l0_solo_by_validity": {
+    "semantic": 618,
+    "format": 818,
+    "checksum": 8
+  },
+  "l0_solo_by_mutation": {
+    "0": 95,
+    "4": 263,
+    "5": 299,
+    "2": 188,
+    "1": 565,
+    "3": 34
+  },
+  "remaining_bypass_by_pii": {
+    "emp_id": 39,
+    "face_id": 35,
+    "car_ins": 30,
+    "EN_SSN": 27,
+    "rrn": 25,
+    "alien": 21,
+    "property": 21,
+    "cctv": 20,
+    "transaction": 20,
+    "loan": 19,
+    "ins_policy": 19,
+    "device": 18,
+    "immigration": 18,
+    "student_id": 17,
+    "biometric": 17,
+    "parcel": 17,
+    "work_phone": 15,
+    "stock": 15,
+    "medical_rec": 14,
+    "voice": 13,
+    "biz_reg": 12,
+    "이름": 12,
+    "flight": 11,
+    "account": 10,
+    "gpa": 10,
+    "card": 8,
+    "vehicle_reg": 7,
+    "plate": 7,
+    "dob": 7,
+    "visa": 6,
+    "fax": 6,
+    "expiry": 6,
+    "voter": 6,
+    "age": 6,
+    "emergency": 6,
+    "retirement": 6,
+    "landline": 6,
+    "health_ins": 5,
+    "cvv": 5,
+    "salary": 4,
+    "session": 3,
+    "phone": 3,
+    "family": 3,
+    "insurance4": 3,
+    "military": 3,
+    "course_grade": 3,
+    "driver": 3,
+    "crypto": 2,
+    "body": 2,
+    "court": 2,
+    "political": 2,
+    "crime": 2,
+    "disability": 1,
+    "prescription": 1,
+    "username": 1,
+    "url": 1,
+    "surgery": 1
+  },
+  "remaining_bypass_by_validity": {
+    "format": 443,
+    "checksum": 111,
+    "semantic": 48
+  },
+  "remaining_bypass_by_mutation": {
+    "2": 235,
+    "1": 144,
+    "3": 133,
+    "4": 57,
+    "5": 26,
+    "0": 7
+  },
+  "potential_false_positives_count": 2129,
+  "fp_by_pii": {
+    "EN_SSN": 1678,
+    "EN_phone": 440,
+    "EN_email": 11
+  },
+  "fp_by_mutation": {
+    "en_fullwidth": 845,
+    "en_homoglyph": 433,
+    "en_combining": 422,
+    "en_zwsp": 418,
+    "en_original": 11
+  },
+  "fp_samples": [
+    {
+      "id": "EN_S-1-21090",
+      "pii_type": "EN_SSN",
+      "mutation": "en_homoglyph",
+      "mutated": "Jennifer Taylor's SSN is 𝟒𝟏𝟐-𝟎𝟖-𝟗𝟑𝟖𝟏",
+      "l0_action": "MASK"
+    },
+    {
+      "id": "EN_S-2-18155",
+      "pii_type": "EN_SSN",
+      "mutation": "en_combining",
+      "mutated": "Susan Lewis's SSN is 097-34-87̂25",
+      "l0_action": "MASK"
+    },
+    {
+      "id": "EN_P-1-16541",
+      "pii_type": "EN_phone",
+      "mutation": "en_fullwidth",
+      "mutated": "Phone: ５５５-１９７-７５５６",
+      "l0_action": "MASK"
+    },
+    {
+      "id": "EN_S-1-18890",
+      "pii_type": "EN_SSN",
+      "mutation": "en_homoglyph",
+      "mutated": "Linda Martin's SSN is 𝟖𝟒𝟓-𝟖𝟔-𝟐𝟒𝟕𝟒",
+      "l0_action": "MASK"
+    },
+    {
+      "id": "EN_S-1-17783",
+      "pii_type": "EN_SSN",
+      "mutation": "en_fullwidth",
+      "mutated": "William Jackson's SSN is ７８５-１８-４９３５",
+      "l0_action": "MASK"
+    },
+    {
+      "id": "EN_S-1-22282",
+      "pii_type": "EN_SSN",
+      "mutation": "en_homoglyph",
+      "mutated": "Richard Harris's SSN is 𝟕𝟖𝟑-𝟗𝟓-𝟒𝟑𝟑𝟖",
+      "l0_action": "MASK"
+    },
+    {
+      "id": "EN_S-1-21578",
+      "pii_type": "EN_SSN",
+      "mutation": "en_homoglyph",
+      "mutated": "Mary Thomas's SSN is 𝟒𝟔𝟏-𝟕𝟖-𝟎𝟗𝟕𝟔",
+      "l0_action": "MASK"
+    },
+    {
+      "id": "EN_S-1-18095",
+      "pii_type": "EN_SSN",
+      "mutation": "en_fullwidth",
+      "mutated": "Patricia White's SSN is ４４２-７２-９２９２",
+      "l0_action": "MASK"
+    },
+    {
+      "id": "EN_S-2-20243",
+      "pii_type": "EN_SSN",
+      "mutation": "en_combining",
+      "mutated": "Elizabeth Martinez's SSN is 6̃16-7́0̂-8̂09̃4",
+      "l0_action": "MASK"
+    },
+    {
+      "id": "EN_S-2-24291",
+      "pii_type": "EN_SSN",
+      "mutation": "en_combining",
+      "mutated": "Sarah Wilson's SSN is 79̀4-75̂-122̃9̂",
+      "l0_action": "MASK"
+    },
+    {
+      "id": "EN_S-1-22018",
+      "pii_type": "EN_SSN",
+      "mutation": "en_homoglyph",
+      "mutated": "James Anderson's SSN is 𝟎𝟏𝟑-𝟏𝟎-𝟎𝟔𝟓𝟒",
+      "l0_action": "MASK"
+    },
+    {
+      "id": "EN_P-1-22221",
+      "pii_type": "EN_phone",
+      "mutation": "en_fullwidth",
+      "mutated": "Phone: ５５５-７３４-９４１４",
+      "l0_action": "MASK"
+    },
+    {
+      "id": "EN_P-1-21861",
+      "pii_type": "EN_phone",
+      "mutation": "en_fullwidth",
+      "mutated": "Phone: ５５５-７６４-８６５５",
+      "l0_action": "MASK"
+    },
+    {
+      "id": "EN_S-1-20298",
+      "pii_type": "EN_SSN",
+      "mutation": "en_homoglyph",
+      "mutated": "Richard Harris's SSN is 𝟎𝟓𝟔-𝟖𝟖-𝟖𝟗𝟓𝟑",
+      "l0_action": "MASK"
+    },
+    {
+      "id": "EN_S-1-23026",
+      "pii_type": "EN_SSN",
+      "mutation": "en_homoglyph",
+      "mutated": "Patricia White's SSN is 𝟖𝟏𝟕-𝟖𝟐-𝟏𝟑𝟏𝟔",
+      "l0_action": "MASK"
+    },
+    {
+      "id": "EN_S-2-16520",
+      "pii_type": "EN_SSN",
+      "mutation": "en_zwsp",
+      "mutated": "Robert Johnson's SSN is 0​4​7​-6​1-2​3​68",
+      "l0_action": "MASK"
+    },
+    {
+      "id": "EN_P-1-20277",
+      "pii_type": "EN_phone",
+      "mutation": "en_fullwidth",
+      "mutated": "Phone: ５５５-８５４-３３７１",
+      "l0_action": "MASK"
+    },
+    {
+      "id": "EN_S-2-18675",
+      "pii_type": "EN_SSN",
+      "mutation": "en_combining",
+      "mutated": "Thomas Rodriguez's SSN is 53́7-49-2̀086",
+      "l0_action": "MASK"
+    },
+    {
+      "id": "EN_P-1-22701",
+      "pii_type": "EN_phone",
+      "mutation": "en_fullwidth",
+      "mutated": "Phone: ５５５-８６０-３２２４",
+      "l0_action": "MASK"
+    },
+    {
+      "id": "EN_S-2-18352",
+      "pii_type": "EN_SSN",
+      "mutation": "en_zwsp",
+      "mutated": "Michael Brown's SSN is 41​5-5​8-8​865​",
+      "l0_action": "MASK"
+    },
+    {
+      "id": "EN_S-1-17906",
+      "pii_type": "EN_SSN",
+      "mutation": "en_homoglyph",
+      "mutated": "William Jackson's SSN is 𝟐𝟗𝟔-𝟕𝟕-𝟎𝟓𝟗𝟕",
+      "l0_action": "MASK"
+    },
+    {
+      "id": "EN_S-2-21531",
+      "pii_type": "EN_SSN",
+      "mutation": "en_combining",
+      "mutated": "Mary Thomas's SSN is 6̃7́7-39-3337",
+      "l0_action": "MASK"
+    },
+    {
+      "id": "EN_S-2-17051",
+      "pii_type": "EN_SSN",
+      "mutation": "en_combining",
+      "mutated": "Jennifer Taylor's SSN is 311-85-4̂55̃9",
+      "l0_action": "MASK"
+    },
+    {
+      "id": "EN_S-1-18914",
+      "pii_type": "EN_SSN",
+      "mutation": "en_homoglyph",
+      "mutated": "Thomas Rodriguez's SSN is 𝟔𝟐𝟓-𝟐𝟔-𝟗𝟖𝟖𝟒",
+      "l0_action": "MASK"
+    },
+    {
+      "id": "EN_S-1-21954",
+      "pii_type": "EN_SSN",
+      "mutation": "en_homoglyph",
+      "mutated": "Linda Martin's SSN is 𝟐𝟔𝟐-𝟎𝟕-𝟒𝟎𝟒𝟗",
+      "l0_action": "MASK"
+    },
+    {
+      "id": "EN_S-2-18755",
+      "pii_type": "EN_SSN",
+      "mutation": "en_combining",
+      "mutated": "Jane Doe's SSN is 7́18-82-3839",
+      "l0_action": "MASK"
+    },
+    {
+      "id": "EN_S-1-22842",
+      "pii_type": "EN_SSN",
+      "mutation": "en_homoglyph",
+      "mutated": "James Anderson's SSN is 𝟑𝟗𝟓-𝟔𝟐-𝟗𝟒𝟒𝟔",
+      "l0_action": "MASK"
+    },
+    {
+      "id": "EN_S-2-22931",
+      "pii_type": "EN_SSN",
+      "mutation": "en_combining",
+      "mutated": "Charles Robinson's SSN is 24̃2̂-9̃9-78́51",
+      "l0_action": "MASK"
+    },
+    {
+      "id": "EN_P-1-23069",
+      "pii_type": "EN_phone",
+      "mutation": "en_fullwidth",
+      "mutated": "Phone: ５５５-９０２-４４７５",
+      "l0_action": "MASK"
+    },
+    {
+      "id": "EN_S-2-23155",
+      "pii_type": "EN_SSN",
+      "mutation": "en_combining",
+      "mutated": "James Anderson's SSN is 7̂18̃-88-2883̂",
+      "l0_action": "MASK"
+    }
+  ]
+}

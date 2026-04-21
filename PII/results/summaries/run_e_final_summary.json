@@ -1,0 +1,1358 @@
+{
+  "run": "E_final_4way",
+  "n": 10000,
+  "overall": {
+    "A_Baseline": {
+      "n": 10000,
+      "TRUE": 8015,
+      "FALSE": 945,
+      "BYPASS": 1040,
+      "true_rate": 80.15,
+      "real_bypass_rate": 19.85
+    },
+    "B_Baseline_L4": {
+      "n": 10000,
+      "TRUE": 9096,
+      "FALSE": 202,
+      "BYPASS": 702,
+      "true_rate": 90.96,
+      "real_bypass_rate": 9.04
+    },
+    "C_With_L0": {
+      "n": 10000,
+      "TRUE": 9432,
+      "FALSE": 513,
+      "BYPASS": 55,
+      "true_rate": 94.32,
+      "real_bypass_rate": 5.68
+    },
+    "D_Full": {
+      "n": 10000,
+      "TRUE": 9723,
+      "FALSE": 241,
+      "BYPASS": 36,
+      "true_rate": 97.23,
+      "real_bypass_rate": 2.77
+    }
+  },
+  "by_lang": {
+    "A_Baseline": {
+      "EN": {
+        "n": 3487,
+        "TRUE": 3465,
+        "FALSE": 22,
+        "BYPASS": 0,
+        "true_rate": 99.37,
+        "real_bypass_rate": 0.63
+      },
+      "KR": {
+        "n": 6513,
+        "TRUE": 4550,
+        "FALSE": 923,
+        "BYPASS": 1040,
+        "true_rate": 69.86,
+        "real_bypass_rate": 30.14
+      }
+    },
+    "B_Baseline_L4": {
+      "EN": {
+        "n": 3487,
+        "TRUE": 3465,
+        "FALSE": 22,
+        "BYPASS": 0,
+        "true_rate": 99.37,
+        "real_bypass_rate": 0.63
+      },
+      "KR": {
+        "n": 6513,
+        "TRUE": 5631,
+        "FALSE": 180,
+        "BYPASS": 702,
+        "true_rate": 86.46,
+        "real_bypass_rate": 13.54
+      }
+    },
+    "C_With_L0": {
+      "EN": {
+        "n": 3487,
+        "TRUE": 3465,
+        "FALSE": 22,
+        "BYPASS": 0,
+        "true_rate": 99.37,
+        "real_bypass_rate": 0.63
+      },
+      "KR": {
+        "n": 6513,
+        "TRUE": 5967,
+        "FALSE": 491,
+        "BYPASS": 55,
+        "true_rate": 91.62,
+        "real_bypass_rate": 8.38
+      }
+    },
+    "D_Full": {
+      "EN": {
+        "n": 3487,
+        "TRUE": 3465,
+        "FALSE": 22,
+        "BYPASS": 0,
+        "true_rate": 99.37,
+        "real_bypass_rate": 0.63
+      },
+      "KR": {
+        "n": 6513,
+        "TRUE": 6258,
+        "FALSE": 219,
+        "BYPASS": 36,
+        "true_rate": 96.08,
+        "real_bypass_rate": 3.92
+      }
+    }
+  },
+  "by_validity": {
+    "A_Baseline": {
+      "checksum": {
+        "n": 3125,
+        "TRUE": 3015,
+        "FALSE": 42,
+        "BYPASS": 68,
+        "true_rate": 96.48,
+        "real_bypass_rate": 3.52
+      },
+      "format": {
+        "n": 5573,
+        "TRUE": 4354,
+        "FALSE": 506,
+        "BYPASS": 713,
+        "true_rate": 78.13,
+        "real_bypass_rate": 21.87
+      },
+      "semantic": {
+        "n": 1302,
+        "TRUE": 646,
+        "FALSE": 397,
+        "BYPASS": 259,
+        "true_rate": 49.62,
+        "real_bypass_rate": 50.38
+      }
+    },
+    "B_Baseline_L4": {
+      "checksum": {
+        "n": 3125,
+        "TRUE": 3080,
+        "FALSE": 22,
+        "BYPASS": 23,
+        "true_rate": 98.56,
+        "real_bypass_rate": 1.44
+      },
+      "format": {
+        "n": 5573,
+        "TRUE": 4878,
+        "FALSE": 134,
+        "BYPASS": 561,
+        "true_rate": 87.53,
+        "real_bypass_rate": 12.47
+      },
+      "semantic": {
+        "n": 1302,
+        "TRUE": 1138,
+        "FALSE": 46,
+        "BYPASS": 118,
+        "true_rate": 87.4,
+        "real_bypass_rate": 12.6
+      }
+    },
+    "C_With_L0": {
+      "checksum": {
+        "n": 3125,
+        "TRUE": 3023,
+        "FALSE": 98,
+        "BYPASS": 4,
+        "true_rate": 96.74,
+        "real_bypass_rate": 3.26
+      },
+      "format": {
+        "n": 5573,
+        "TRUE": 5154,
+        "FALSE": 373,
+        "BYPASS": 46,
+        "true_rate": 92.48,
+        "real_bypass_rate": 7.52
+      },
+      "semantic": {
+        "n": 1302,
+        "TRUE": 1255,
+        "FALSE": 42,
+        "BYPASS": 5,
+        "true_rate": 96.39,
+        "real_bypass_rate": 3.61
+      }
+    },
+    "D_Full": {
+      "checksum": {
+        "n": 3125,
+        "TRUE": 3085,
+        "FALSE": 40,
+        "BYPASS": 0,
+        "true_rate": 98.72,
+        "real_bypass_rate": 1.28
+      },
+      "format": {
+        "n": 5573,
+        "TRUE": 5351,
+        "FALSE": 188,
+        "BYPASS": 34,
+        "true_rate": 96.02,
+        "real_bypass_rate": 3.98
+      },
+      "semantic": {
+        "n": 1302,
+        "TRUE": 1287,
+        "FALSE": 13,
+        "BYPASS": 2,
+        "true_rate": 98.85,
+        "real_bypass_rate": 1.15
+      }
+    }
+  },
+  "by_lang_x_validity": {
+    "A_Baseline": {
+      "EN_checksum": {
+        "n": 2603,
+        "TRUE": 2581,
+        "FALSE": 22,
+        "BYPASS": 0,
+        "true_rate": 99.15,
+        "real_bypass_rate": 0.85
+      },
+      "EN_format": {
+        "n": 884,
+        "TRUE": 884,
+        "FALSE": 0,
+        "BYPASS": 0,
+        "true_rate": 100.0,
+        "real_bypass_rate": 0.0
+      },
+      "KR_checksum": {
+        "n": 522,
+        "TRUE": 434,
+        "FALSE": 20,
+        "BYPASS": 68,
+        "true_rate": 83.14,
+        "real_bypass_rate": 16.86
+      },
+      "KR_format": {
+        "n": 4689,
+        "TRUE": 3470,
+        "FALSE": 506,
+        "BYPASS": 713,
+        "true_rate": 74.0,
+        "real_bypass_rate": 26.0
+      },
+      "KR_semantic": {
+        "n": 1302,
+        "TRUE": 646,
+        "FALSE": 397,
+        "BYPASS": 259,
+        "true_rate": 49.62,
+        "real_bypass_rate": 50.38
+      }
+    },
+    "B_Baseline_L4": {
+      "EN_checksum": {
+        "n": 2603,
+        "TRUE": 2581,
+        "FALSE": 22,
+        "BYPASS": 0,
+        "true_rate": 99.15,
+        "real_bypass_rate": 0.85
+      },
+      "EN_format": {
+        "n": 884,
+        "TRUE": 884,
+        "FALSE": 0,
+        "BYPASS": 0,
+        "true_rate": 100.0,
+        "real_bypass_rate": 0.0
+      },
+      "KR_checksum": {
+        "n": 522,
+        "TRUE": 499,
+        "FALSE": 0,
+        "BYPASS": 23,
+        "true_rate": 95.59,
+        "real_bypass_rate": 4.41
+      },
+      "KR_format": {
+        "n": 4689,
+        "TRUE": 3994,
+        "FALSE": 134,
+        "BYPASS": 561,
+        "true_rate": 85.18,
+        "real_bypass_rate": 14.82
+      },
+      "KR_semantic": {
+        "n": 1302,
+        "TRUE": 1138,
+        "FALSE": 46,
+        "BYPASS": 118,
+        "true_rate": 87.4,
+        "real_bypass_rate": 12.6
+      }
+    },
+    "C_With_L0": {
+      "EN_checksum": {
+        "n": 2603,
+        "TRUE": 2581,
+        "FALSE": 22,
+        "BYPASS": 0,
+        "true_rate": 99.15,
+        "real_bypass_rate": 0.85
+      },
+      "EN_format": {
+        "n": 884,
+        "TRUE": 884,
+        "FALSE": 0,
+        "BYPASS": 0,
+        "true_rate": 100.0,
+        "real_bypass_rate": 0.0
+      },
+      "KR_checksum": {
+        "n": 522,
+        "TRUE": 442,
+        "FALSE": 76,
+        "BYPASS": 4,
+        "true_rate": 84.67,
+        "real_bypass_rate": 15.33
+      },
+      "KR_format": {
+        "n": 4689,
+        "TRUE": 4270,
+        "FALSE": 373,
+        "BYPASS": 46,
+        "true_rate": 91.06,
+        "real_bypass_rate": 8.94
+      },
+      "KR_semantic": {
+        "n": 1302,
+        "TRUE": 1255,
+        "FALSE": 42,
+        "BYPASS": 5,
+        "true_rate": 96.39,
+        "real_bypass_rate": 3.61
+      }
+    },
+    "D_Full": {
+      "EN_checksum": {
+        "n": 2603,
+        "TRUE": 2581,
+        "FALSE": 22,
+        "BYPASS": 0,
+        "true_rate": 99.15,
+        "real_bypass_rate": 0.85
+      },
+      "EN_format": {
+        "n": 884,
+        "TRUE": 884,
+        "FALSE": 0,
+        "BYPASS": 0,
+        "true_rate": 100.0,
+        "real_bypass_rate": 0.0
+      },
+      "KR_checksum": {
+        "n": 522,
+        "TRUE": 504,
+        "FALSE": 18,
+        "BYPASS": 0,
+        "true_rate": 96.55,
+        "real_bypass_rate": 3.45
+      },
+      "KR_format": {
+        "n": 4689,
+        "TRUE": 4467,
+        "FALSE": 188,
+        "BYPASS": 34,
+        "true_rate": 95.27,
+        "real_bypass_rate": 4.73
+      },
+      "KR_semantic": {
+        "n": 1302,
+        "TRUE": 1287,
+        "FALSE": 13,
+        "BYPASS": 2,
+        "true_rate": 98.85,
+        "real_bypass_rate": 1.15
+      }
+    }
+  },
+  "by_mutation_level": {
+    "A_Baseline": {
+      "0": {
+        "n": 1246,
+        "TRUE": 1144,
+        "FALSE": 61,
+        "BYPASS": 41,
+        "true_rate": 91.81,
+        "real_bypass_rate": 8.19
+      },
+      "1": {
+        "n": 3557,
+        "TRUE": 2909,
+        "FALSE": 184,
+        "BYPASS": 464,
+        "true_rate": 81.78,
+        "real_bypass_rate": 18.22
+      },
+      "2": {
+        "n": 1739,
+        "TRUE": 1316,
+        "FALSE": 197,
+        "BYPASS": 226,
+        "true_rate": 75.68,
+        "real_bypass_rate": 24.32
+      },
+      "3": {
+        "n": 1275,
+        "TRUE": 1108,
+        "FALSE": 81,
+        "BYPASS": 86,
+        "true_rate": 86.9,
+        "real_bypass_rate": 13.1
+      },
+      "4": {
+        "n": 1054,
+        "TRUE": 734,
+        "FALSE": 145,
+        "BYPASS": 175,
+        "true_rate": 69.64,
+        "real_bypass_rate": 30.36
+      },
+      "5": {
+        "n": 1129,
+        "TRUE": 804,
+        "FALSE": 277,
+        "BYPASS": 48,
+        "true_rate": 71.21,
+        "real_bypass_rate": 28.79
+      }
+    },
+    "B_Baseline_L4": {
+      "0": {
+        "n": 1246,
+        "TRUE": 1208,
+        "FALSE": 13,
+        "BYPASS": 25,
+        "true_rate": 96.95,
+        "real_bypass_rate": 3.05
+      },
+      "1": {
+        "n": 3557,
+        "TRUE": 3184,
+        "FALSE": 57,
+        "BYPASS": 316,
+        "true_rate": 89.51,
+        "real_bypass_rate": 10.49
+      },
+      "2": {
+        "n": 1739,
+        "TRUE": 1533,
+        "FALSE": 56,
+        "BYPASS": 150,
+        "true_rate": 88.15,
+        "real_bypass_rate": 11.85
+      },
+      "3": {
+        "n": 1275,
+        "TRUE": 1190,
+        "FALSE": 26,
+        "BYPASS": 59,
+        "true_rate": 93.33,
+        "real_bypass_rate": 6.67
+      },
+      "4": {
+        "n": 1054,
+        "TRUE": 891,
+        "FALSE": 40,
+        "BYPASS": 123,
+        "true_rate": 84.54,
+        "real_bypass_rate": 15.46
+      },
+      "5": {
+        "n": 1129,
+        "TRUE": 1090,
+        "FALSE": 10,
+        "BYPASS": 29,
+        "true_rate": 96.55,
+        "real_bypass_rate": 3.45
+      }
+    },
+    "C_With_L0": {
+      "0": {
+        "n": 1246,
+        "TRUE": 1239,
+        "FALSE": 4,
+        "BYPASS": 3,
+        "true_rate": 99.44,
+        "real_bypass_rate": 0.56
+      },
+      "1": {
+        "n": 3557,
+        "TRUE": 3447,
+        "FALSE": 98,
+        "BYPASS": 12,
+        "true_rate": 96.91,
+        "real_bypass_rate": 3.09
+      },
+      "2": {
+        "n": 1739,
+        "TRUE": 1504,
+        "FALSE": 235,
+        "BYPASS": 0,
+        "true_rate": 86.49,
+        "real_bypass_rate": 13.51
+      },
+      "3": {
+        "n": 1275,
+        "TRUE": 1142,
+        "FALSE": 103,
+        "BYPASS": 30,
+        "true_rate": 89.57,
+        "real_bypass_rate": 10.43
+      },
+      "4": {
+        "n": 1054,
+        "TRUE": 997,
+        "FALSE": 48,
+        "BYPASS": 9,
+        "true_rate": 94.59,
+        "real_bypass_rate": 5.41
+      },
+      "5": {
+        "n": 1129,
+        "TRUE": 1103,
+        "FALSE": 25,
+        "BYPASS": 1,
+        "true_rate": 97.7,
+        "real_bypass_rate": 2.3
+      }
+    },
+    "D_Full": {
+      "0": {
+        "n": 1246,
+        "TRUE": 1243,
+        "FALSE": 2,
+        "BYPASS": 1,
+        "true_rate": 99.76,
+        "real_bypass_rate": 0.24
+      },
+      "1": {
+        "n": 3557,
+        "TRUE": 3493,
+        "FALSE": 61,
+        "BYPASS": 3,
+        "true_rate": 98.2,
+        "real_bypass_rate": 1.8
+      },
+      "2": {
+        "n": 1739,
+        "TRUE": 1632,
+        "FALSE": 107,
+        "BYPASS": 0,
+        "true_rate": 93.85,
+        "real_bypass_rate": 6.15
+      },
+      "3": {
+        "n": 1275,
+        "TRUE": 1215,
+        "FALSE": 35,
+        "BYPASS": 25,
+        "true_rate": 95.29,
+        "real_bypass_rate": 4.71
+      },
+      "4": {
+        "n": 1054,
+        "TRUE": 1014,
+        "FALSE": 34,
+        "BYPASS": 6,
+        "true_rate": 96.2,
+        "real_bypass_rate": 3.8
+      },
+      "5": {
+        "n": 1129,
+        "TRUE": 1126,
+        "FALSE": 2,
+        "BYPASS": 1,
+        "true_rate": 99.73,
+        "real_bypass_rate": 0.27
+      }
+    }
+  },
+  "hardest_pii": {
+    "A_Baseline": [
+      {
+        "pii_type": "session",
+        "n": 73,
+        "TRUE": 3,
+        "FALSE": 8,
+        "BYPASS": 62,
+        "true_rate": 4.11,
+        "real_bypass_rate": 95.89
+      },
+      {
+        "pii_type": "court",
+        "n": 69,
+        "TRUE": 5,
+        "FALSE": 9,
+        "BYPASS": 55,
+        "true_rate": 7.25,
+        "real_bypass_rate": 92.75
+      },
+      {
+        "pii_type": "allergy",
+        "n": 39,
+        "TRUE": 3,
+        "FALSE": 25,
+        "BYPASS": 11,
+        "true_rate": 7.69,
+        "real_bypass_rate": 92.31
+      },
+      {
+        "pii_type": "company",
+        "n": 42,
+        "TRUE": 6,
+        "FALSE": 16,
+        "BYPASS": 20,
+        "true_rate": 14.29,
+        "real_bypass_rate": 85.71
+      },
+      {
+        "pii_type": "job_title",
+        "n": 51,
+        "TRUE": 9,
+        "FALSE": 25,
+        "BYPASS": 17,
+        "true_rate": 17.65,
+        "real_bypass_rate": 82.35
+      },
+      {
+        "pii_type": "course_grade",
+        "n": 42,
+        "TRUE": 8,
+        "FALSE": 24,
+        "BYPASS": 10,
+        "true_rate": 19.05,
+        "real_bypass_rate": 80.95
+      },
+      {
+        "pii_type": "family",
+        "n": 72,
+        "TRUE": 14,
+        "FALSE": 58,
+        "BYPASS": 0,
+        "true_rate": 19.44,
+        "real_bypass_rate": 80.56
+      },
+      {
+        "pii_type": "gpa",
+        "n": 74,
+        "TRUE": 16,
+        "FALSE": 21,
+        "BYPASS": 37,
+        "true_rate": 21.62,
+        "real_bypass_rate": 78.38
+      },
+      {
+        "pii_type": "gps",
+        "n": 85,
+        "TRUE": 22,
+        "FALSE": 8,
+        "BYPASS": 55,
+        "true_rate": 25.88,
+        "real_bypass_rate": 74.12
+      },
+      {
+        "pii_type": "degree",
+        "n": 38,
+        "TRUE": 10,
+        "FALSE": 21,
+        "BYPASS": 7,
+        "true_rate": 26.32,
+        "real_bypass_rate": 73.68
+      },
+      {
+        "pii_type": "surgery",
+        "n": 72,
+        "TRUE": 19,
+        "FALSE": 47,
+        "BYPASS": 6,
+        "true_rate": 26.39,
+        "real_bypass_rate": 73.61
+      },
+      {
+        "pii_type": "crime",
+        "n": 83,
+        "TRUE": 22,
+        "FALSE": 30,
+        "BYPASS": 31,
+        "true_rate": 26.51,
+        "real_bypass_rate": 73.49
+      },
+      {
+        "pii_type": "blood",
+        "n": 50,
+        "TRUE": 14,
+        "FALSE": 14,
+        "BYPASS": 22,
+        "true_rate": 28.0,
+        "real_bypass_rate": 72.0
+      },
+      {
+        "pii_type": "retirement",
+        "n": 62,
+        "TRUE": 18,
+        "FALSE": 30,
+        "BYPASS": 14,
+        "true_rate": 29.03,
+        "real_bypass_rate": 70.97
+      },
+      {
+        "pii_type": "prescription",
+        "n": 78,
+        "TRUE": 24,
+        "FALSE": 20,
+        "BYPASS": 34,
+        "true_rate": 30.77,
+        "real_bypass_rate": 69.23
+      },
+      {
+        "pii_type": "biometric",
+        "n": 92,
+        "TRUE": 29,
+        "FALSE": 8,
+        "BYPASS": 55,
+        "true_rate": 31.52,
+        "real_bypass_rate": 68.48
+      },
+      {
+        "pii_type": "marital",
+        "n": 53,
+        "TRUE": 18,
+        "FALSE": 11,
+        "BYPASS": 24,
+        "true_rate": 33.96,
+        "real_bypass_rate": 66.04
+      },
+      {
+        "pii_type": "crypto",
+        "n": 70,
+        "TRUE": 24,
+        "FALSE": 6,
+        "BYPASS": 40,
+        "true_rate": 34.29,
+        "real_bypass_rate": 65.71
+      },
+      {
+        "pii_type": "dept",
+        "n": 54,
+        "TRUE": 19,
+        "FALSE": 18,
+        "BYPASS": 17,
+        "true_rate": 35.19,
+        "real_bypass_rate": 64.81
+      },
+      {
+        "pii_type": "body",
+        "n": 75,
+        "TRUE": 28,
+        "FALSE": 34,
+        "BYPASS": 13,
+        "true_rate": 37.33,
+        "real_bypass_rate": 62.67
+      }
+    ],
+    "B_Baseline_L4": [
+      {
+        "pii_type": "session",
+        "n": 73,
+        "TRUE": 11,
+        "FALSE": 0,
+        "BYPASS": 62,
+        "true_rate": 15.07,
+        "real_bypass_rate": 84.93
+      },
+      {
+        "pii_type": "court",
+        "n": 69,
+        "TRUE": 14,
+        "FALSE": 0,
+        "BYPASS": 55,
+        "true_rate": 20.29,
+        "real_bypass_rate": 79.71
+      },
+      {
+        "pii_type": "gps",
+        "n": 85,
+        "TRUE": 30,
+        "FALSE": 0,
+        "BYPASS": 55,
+        "true_rate": 35.29,
+        "real_bypass_rate": 64.71
+      },
+      {
+        "pii_type": "biometric",
+        "n": 92,
+        "TRUE": 33,
+        "FALSE": 4,
+        "BYPASS": 55,
+        "true_rate": 35.87,
+        "real_bypass_rate": 64.13
+      },
+      {
+        "pii_type": "crypto",
+        "n": 70,
+        "TRUE": 30,
+        "FALSE": 0,
+        "BYPASS": 40,
+        "true_rate": 42.86,
+        "real_bypass_rate": 57.14
+      },
+      {
+        "pii_type": "jwt",
+        "n": 79,
+        "TRUE": 35,
+        "FALSE": 44,
+        "BYPASS": 0,
+        "true_rate": 44.3,
+        "real_bypass_rate": 55.7
+      },
+      {
+        "pii_type": "prescription",
+        "n": 78,
+        "TRUE": 43,
+        "FALSE": 6,
+        "BYPASS": 29,
+        "true_rate": 55.13,
+        "real_bypass_rate": 44.87
+      },
+      {
+        "pii_type": "face_id",
+        "n": 87,
+        "TRUE": 48,
+        "FALSE": 4,
+        "BYPASS": 35,
+        "true_rate": 55.17,
+        "real_bypass_rate": 44.83
+      },
+      {
+        "pii_type": "gpa",
+        "n": 74,
+        "TRUE": 47,
+        "FALSE": 1,
+        "BYPASS": 26,
+        "true_rate": 63.51,
+        "real_bypass_rate": 36.49
+      },
+      {
+        "pii_type": "emp_id",
+        "n": 91,
+        "TRUE": 62,
+        "FALSE": 15,
+        "BYPASS": 14,
+        "true_rate": 68.13,
+        "real_bypass_rate": 31.87
+      },
+      {
+        "pii_type": "allergy",
+        "n": 39,
+        "TRUE": 27,
+        "FALSE": 2,
+        "BYPASS": 10,
+        "true_rate": 69.23,
+        "real_bypass_rate": 30.77
+      },
+      {
+        "pii_type": "retirement",
+        "n": 62,
+        "TRUE": 43,
+        "FALSE": 6,
+        "BYPASS": 13,
+        "true_rate": 69.35,
+        "real_bypass_rate": 30.65
+      },
+      {
+        "pii_type": "degree",
+        "n": 38,
+        "TRUE": 27,
+        "FALSE": 5,
+        "BYPASS": 6,
+        "true_rate": 71.05,
+        "real_bypass_rate": 28.95
+      },
+      {
+        "pii_type": "car_ins",
+        "n": 86,
+        "TRUE": 62,
+        "FALSE": 0,
+        "BYPASS": 24,
+        "true_rate": 72.09,
+        "real_bypass_rate": 27.91
+      },
+      {
+        "pii_type": "credit_score",
+        "n": 83,
+        "TRUE": 60,
+        "FALSE": 8,
+        "BYPASS": 15,
+        "true_rate": 72.29,
+        "real_bypass_rate": 27.71
+      },
+      {
+        "pii_type": "ssh",
+        "n": 92,
+        "TRUE": 67,
+        "FALSE": 10,
+        "BYPASS": 15,
+        "true_rate": 72.83,
+        "real_bypass_rate": 27.17
+      },
+      {
+        "pii_type": "cctv",
+        "n": 101,
+        "TRUE": 74,
+        "FALSE": 0,
+        "BYPASS": 27,
+        "true_rate": 73.27,
+        "real_bypass_rate": 26.73
+      },
+      {
+        "pii_type": "company",
+        "n": 42,
+        "TRUE": 31,
+        "FALSE": 2,
+        "BYPASS": 9,
+        "true_rate": 73.81,
+        "real_bypass_rate": 26.19
+      },
+      {
+        "pii_type": "blood",
+        "n": 50,
+        "TRUE": 37,
+        "FALSE": 1,
+        "BYPASS": 12,
+        "true_rate": 74.0,
+        "real_bypass_rate": 26.0
+      },
+      {
+        "pii_type": "device",
+        "n": 70,
+        "TRUE": 52,
+        "FALSE": 0,
+        "BYPASS": 18,
+        "true_rate": 74.29,
+        "real_bypass_rate": 25.71
+      }
+    ],
+    "C_With_L0": [
+      {
+        "pii_type": "emp_id",
+        "n": 91,
+        "TRUE": 54,
+        "FALSE": 29,
+        "BYPASS": 8,
+        "true_rate": 59.34,
+        "real_bypass_rate": 40.66
+      },
+      {
+        "pii_type": "face_id",
+        "n": 87,
+        "TRUE": 52,
+        "FALSE": 33,
+        "BYPASS": 2,
+        "true_rate": 59.77,
+        "real_bypass_rate": 40.23
+      },
+      {
+        "pii_type": "car_ins",
+        "n": 86,
+        "TRUE": 56,
+        "FALSE": 27,
+        "BYPASS": 3,
+        "true_rate": 65.12,
+        "real_bypass_rate": 34.88
+      },
+      {
+        "pii_type": "loan",
+        "n": 67,
+        "TRUE": 48,
+        "FALSE": 17,
+        "BYPASS": 2,
+        "true_rate": 71.64,
+        "real_bypass_rate": 28.36
+      },
+      {
+        "pii_type": "device",
+        "n": 70,
+        "TRUE": 52,
+        "FALSE": 18,
+        "BYPASS": 0,
+        "true_rate": 74.29,
+        "real_bypass_rate": 25.71
+      },
+      {
+        "pii_type": "parcel",
+        "n": 67,
+        "TRUE": 51,
+        "FALSE": 16,
+        "BYPASS": 0,
+        "true_rate": 76.12,
+        "real_bypass_rate": 23.88
+      },
+      {
+        "pii_type": "alien",
+        "n": 88,
+        "TRUE": 67,
+        "FALSE": 21,
+        "BYPASS": 0,
+        "true_rate": 76.14,
+        "real_bypass_rate": 23.86
+      },
+      {
+        "pii_type": "property",
+        "n": 88,
+        "TRUE": 67,
+        "FALSE": 21,
+        "BYPASS": 0,
+        "true_rate": 76.14,
+        "real_bypass_rate": 23.86
+      },
+      {
+        "pii_type": "transaction",
+        "n": 90,
+        "TRUE": 71,
+        "FALSE": 17,
+        "BYPASS": 2,
+        "true_rate": 78.89,
+        "real_bypass_rate": 21.11
+      },
+      {
+        "pii_type": "student_id",
+        "n": 73,
+        "TRUE": 58,
+        "FALSE": 15,
+        "BYPASS": 0,
+        "true_rate": 79.45,
+        "real_bypass_rate": 20.55
+      },
+      {
+        "pii_type": "cctv",
+        "n": 101,
+        "TRUE": 81,
+        "FALSE": 20,
+        "BYPASS": 0,
+        "true_rate": 80.2,
+        "real_bypass_rate": 19.8
+      },
+      {
+        "pii_type": "rrn",
+        "n": 108,
+        "TRUE": 87,
+        "FALSE": 21,
+        "BYPASS": 0,
+        "true_rate": 80.56,
+        "real_bypass_rate": 19.44
+      },
+      {
+        "pii_type": "biometric",
+        "n": 92,
+        "TRUE": 75,
+        "FALSE": 5,
+        "BYPASS": 12,
+        "true_rate": 81.52,
+        "real_bypass_rate": 18.48
+      },
+      {
+        "pii_type": "work_phone",
+        "n": 84,
+        "TRUE": 69,
+        "FALSE": 15,
+        "BYPASS": 0,
+        "true_rate": 82.14,
+        "real_bypass_rate": 17.86
+      },
+      {
+        "pii_type": "immigration",
+        "n": 91,
+        "TRUE": 75,
+        "FALSE": 16,
+        "BYPASS": 0,
+        "true_rate": 82.42,
+        "real_bypass_rate": 17.58
+      },
+      {
+        "pii_type": "medical_rec",
+        "n": 84,
+        "TRUE": 70,
+        "FALSE": 12,
+        "BYPASS": 2,
+        "true_rate": 83.33,
+        "real_bypass_rate": 16.67
+      },
+      {
+        "pii_type": "ins_policy",
+        "n": 90,
+        "TRUE": 76,
+        "FALSE": 14,
+        "BYPASS": 0,
+        "true_rate": 84.44,
+        "real_bypass_rate": 15.56
+      },
+      {
+        "pii_type": "gpa",
+        "n": 74,
+        "TRUE": 64,
+        "FALSE": 3,
+        "BYPASS": 7,
+        "true_rate": 86.49,
+        "real_bypass_rate": 13.51
+      },
+      {
+        "pii_type": "voice",
+        "n": 90,
+        "TRUE": 78,
+        "FALSE": 12,
+        "BYPASS": 0,
+        "true_rate": 86.67,
+        "real_bypass_rate": 13.33
+      },
+      {
+        "pii_type": "biz_reg",
+        "n": 94,
+        "TRUE": 82,
+        "FALSE": 8,
+        "BYPASS": 4,
+        "true_rate": 87.23,
+        "real_bypass_rate": 12.77
+      }
+    ],
+    "D_Full": [
+      {
+        "pii_type": "face_id",
+        "n": 87,
+        "TRUE": 52,
+        "FALSE": 33,
+        "BYPASS": 2,
+        "true_rate": 59.77,
+        "real_bypass_rate": 40.23
+      },
+      {
+        "pii_type": "emp_id",
+        "n": 91,
+        "TRUE": 66,
+        "FALSE": 17,
+        "BYPASS": 8,
+        "true_rate": 72.53,
+        "real_bypass_rate": 27.47
+      },
+      {
+        "pii_type": "device",
+        "n": 70,
+        "TRUE": 52,
+        "FALSE": 18,
+        "BYPASS": 0,
+        "true_rate": 74.29,
+        "real_bypass_rate": 25.71
+      },
+      {
+        "pii_type": "car_ins",
+        "n": 86,
+        "TRUE": 64,
+        "FALSE": 19,
+        "BYPASS": 3,
+        "true_rate": 74.42,
+        "real_bypass_rate": 25.58
+      },
+      {
+        "pii_type": "parcel",
+        "n": 67,
+        "TRUE": 51,
+        "FALSE": 16,
+        "BYPASS": 0,
+        "true_rate": 76.12,
+        "real_bypass_rate": 23.88
+      },
+      {
+        "pii_type": "property",
+        "n": 88,
+        "TRUE": 67,
+        "FALSE": 21,
+        "BYPASS": 0,
+        "true_rate": 76.14,
+        "real_bypass_rate": 23.86
+      },
+      {
+        "pii_type": "cctv",
+        "n": 101,
+        "TRUE": 82,
+        "FALSE": 19,
+        "BYPASS": 0,
+        "true_rate": 81.19,
+        "real_bypass_rate": 18.81
+      },
+      {
+        "pii_type": "biometric",
+        "n": 92,
+        "TRUE": 75,
+        "FALSE": 5,
+        "BYPASS": 12,
+        "true_rate": 81.52,
+        "real_bypass_rate": 18.48
+      },
+      {
+        "pii_type": "medical_rec",
+        "n": 84,
+        "TRUE": 71,
+        "FALSE": 11,
+        "BYPASS": 2,
+        "true_rate": 84.52,
+        "real_bypass_rate": 15.48
+      },
+      {
+        "pii_type": "loan",
+        "n": 67,
+        "TRUE": 57,
+        "FALSE": 9,
+        "BYPASS": 1,
+        "true_rate": 85.07,
+        "real_bypass_rate": 14.93
+      },
+      {
+        "pii_type": "plate",
+        "n": 70,
+        "TRUE": 63,
+        "FALSE": 7,
+        "BYPASS": 0,
+        "true_rate": 90.0,
+        "real_bypass_rate": 10.0
+      },
+      {
+        "pii_type": "expiry",
+        "n": 78,
+        "TRUE": 72,
+        "FALSE": 6,
+        "BYPASS": 0,
+        "true_rate": 92.31,
+        "real_bypass_rate": 7.69
+      },
+      {
+        "pii_type": "cvv",
+        "n": 68,
+        "TRUE": 63,
+        "FALSE": 5,
+        "BYPASS": 0,
+        "true_rate": 92.65,
+        "real_bypass_rate": 7.35
+      },
+      {
+        "pii_type": "gpa",
+        "n": 74,
+        "TRUE": 69,
+        "FALSE": 0,
+        "BYPASS": 5,
+        "true_rate": 93.24,
+        "real_bypass_rate": 6.76
+      },
+      {
+        "pii_type": "visa",
+        "n": 98,
+        "TRUE": 92,
+        "FALSE": 6,
+        "BYPASS": 0,
+        "true_rate": 93.88,
+        "real_bypass_rate": 6.12
+      },
+      {
+        "pii_type": "fax",
+        "n": 84,
+        "TRUE": 80,
+        "FALSE": 4,
+        "BYPASS": 0,
+        "true_rate": 95.24,
+        "real_bypass_rate": 4.76
+      },
+      {
+        "pii_type": "transaction",
+        "n": 90,
+        "TRUE": 86,
+        "FALSE": 3,
+        "BYPASS": 1,
+        "true_rate": 95.56,
+        "real_bypass_rate": 4.44
+      },
+      {
+        "pii_type": "immigration",
+        "n": 91,
+        "TRUE": 87,
+        "FALSE": 4,
+        "BYPASS": 0,
+        "true_rate": 95.6,
+        "real_bypass_rate": 4.4
+      },
+      {
+        "pii_type": "student_id",
+        "n": 73,
+        "TRUE": 70,
+        "FALSE": 3,
+        "BYPASS": 0,
+        "true_rate": 95.89,
+        "real_bypass_rate": 4.11
+      },
+      {
+        "pii_type": "session",
+        "n": 73,
+        "TRUE": 70,
+        "FALSE": 1,
+        "BYPASS": 2,
+        "true_rate": 95.89,
+        "real_bypass_rate": 4.11
+      }
+    ]
+  },
+  "configs": {
+    "A_Baseline": {
+      "layers": [
+        "Bedrock Guardrail",
+        "Lakera",
+        "Presidio PII"
+      ],
+      "description": "L1+L2+L3 (prod stack, no LLM)"
+    },
+    "B_Baseline_L4": {
+      "layers": [
+        "Bedrock Guardrail",
+        "Lakera",
+        "Presidio PII",
+        "gpt4o-pii-judge"
+      ],
+      "description": "L1+L2+L3+L4 (+ GPT-4o-mini judge)"
+    },
+    "C_With_L0": {
+      "layers": [
+        "Bedrock Guardrail",
+        "Lakera",
+        "Presidio PII",
+        "korean-layer0"
+      ],
+      "description": "L0+L1+L2+L3 (Korean normalizer, no LLM)"
+    },
+    "D_Full": {
+      "layers": [
+        "Bedrock Guardrail",
+        "Lakera",
+        "Presidio PII",
+        "gpt4o-pii-judge",
+        "korean-layer0"
+      ],
+      "description": "L0+L1+L2+L3+L4 (everything)"
+    }
+  }
+}

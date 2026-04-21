@@ -1,0 +1,14 @@
+{
+  "total_cases": 10000,
+  "l0l3_neutralized": 9432,
+  "l4_needed": 568,
+  "l4_recovered": 291,
+  "l4_missed": 277,
+  "full_true_rate": 97.23,
+  "smart_true_rate": 97.23,
+  "detection_impact_pp": 0.0,
+  "l4_call_reduction_pct": 94.32,
+  "l4_avg_latency_ms": 1542,
+  "projected_latency_saved_min": 242.4,
+  "projected_cost_saved_usd_10k": 1.27332
+}

@@ -1,6 +1,31 @@
 __pycache__/
 *.py[cod]
 
+# Secrets — NEVER commit
+.env
+.env.*
+!.env.example
+**/credentials*
+**/secrets*
+*.pem
+*.key
+
+# Logs
+*.log
+*.log.*
+
+# Eval intermediate / test artifacts (regeneratable)
+eval_*.log
+eval_*_test.json
+
+# IDE / OS / CLI state
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+.claude/
+
 # Generated large artifacts (do not commit)
 PII/fuzzer/corpus_build/korean_addresses/raw/*.zip
 PII/fuzzer/data/*.jsonl

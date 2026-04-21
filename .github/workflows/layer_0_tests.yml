@@ -1,0 +1,42 @@
+name: Layer 0 Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'PII/layer_0/**'
+      - '.github/workflows/layer_0_tests.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'PII/layer_0/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.12']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+
+      - name: Run Layer 0 unit tests
+        working-directory: PII/layer_0
+        run: |
+          pytest tests/ -v --tb=short
+
+      - name: Verify detector demo runs
+        working-directory: PII/layer_0
+        run: |
+          python korean_pii_detector.py | head -20
