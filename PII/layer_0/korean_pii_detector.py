@@ -460,6 +460,10 @@ class KoreanPIIDetector:
             # 구체적 값 매칭
             for val in config.get("values", []):
                 if val in text:
+                    # 짧은 값(<=2자)은 컨텍스트 필수 — 일반 단어와 우연 충돌 방지
+                    # 예: "개" (allergy) vs "3개월"/"개선", "한국" (nationality) vs "한국은행"
+                    if len(val) <= 2 and not context_found:
+                        continue
                     findings.append(PIIFinding(
                         pii_type=pii_type,
                         value=val,
