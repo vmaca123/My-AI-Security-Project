@@ -1,0 +1,130 @@
+{
+  "v4_overall": {
+    "n": 10000,
+    "TRUE": 8011,
+    "FALSE": 959,
+    "BYPASS": 1030,
+    "true_rate": 80.11,
+    "real_bypass_rate": 19.89
+  },
+  "orig_overall": {
+    "n": 10000,
+    "TRUE": 8015,
+    "FALSE": 945,
+    "BYPASS": 1040,
+    "true_rate": 80.15,
+    "real_bypass_rate": 19.85
+  },
+  "v4_by_lang": {
+    "EN": {
+      "n": 3500,
+      "true_rate": 99.23,
+      "real_bypass_rate": 0.77
+    },
+    "KR": {
+      "n": 6500,
+      "true_rate": 69.82,
+      "real_bypass_rate": 30.18
+    }
+  },
+  "orig_by_lang": {
+    "EN": {
+      "n": 3487,
+      "true_rate": 99.37,
+      "real_bypass_rate": 0.63
+    },
+    "KR": {
+      "n": 6513,
+      "true_rate": 69.86,
+      "real_bypass_rate": 30.14
+    }
+  },
+  "v4_by_validity": {
+    "checksum": {
+      "n": 3076,
+      "true_rate": 96.2,
+      "real_bypass_rate": 3.8
+    },
+    "format": {
+      "n": 5441,
+      "true_rate": 79.25,
+      "real_bypass_rate": 20.75
+    },
+    "semantic": {
+      "n": 1483,
+      "true_rate": 49.9,
+      "real_bypass_rate": 50.1
+    }
+  },
+  "orig_by_validity": {
+    "checksum": {
+      "n": 3125,
+      "true_rate": 96.48,
+      "real_bypass_rate": 3.52
+    },
+    "format": {
+      "n": 5573,
+      "true_rate": 78.13,
+      "real_bypass_rate": 21.87
+    },
+    "semantic": {
+      "n": 1302,
+      "true_rate": 49.62,
+      "real_bypass_rate": 50.38
+    }
+  },
+  "v4_by_lang_x_validity": {
+    "EN_checksum": {
+      "n": 2596,
+      "true_rate": 98.96,
+      "real_bypass_rate": 1.04
+    },
+    "EN_format": {
+      "n": 904,
+      "true_rate": 100.0,
+      "real_bypass_rate": 0.0
+    },
+    "KR_checksum": {
+      "n": 480,
+      "true_rate": 81.25,
+      "real_bypass_rate": 18.75
+    },
+    "KR_format": {
+      "n": 4537,
+      "true_rate": 75.12,
+      "real_bypass_rate": 24.88
+    },
+    "KR_semantic": {
+      "n": 1483,
+      "true_rate": 49.9,
+      "real_bypass_rate": 50.1
+    }
+  },
+  "orig_by_lang_x_validity": {
+    "EN_checksum": {
+      "n": 2603,
+      "true_rate": 99.15,
+      "real_bypass_rate": 0.85
+    },
+    "EN_format": {
+      "n": 884,
+      "true_rate": 100.0,
+      "real_bypass_rate": 0.0
+    },
+    "KR_checksum": {
+      "n": 522,
+      "true_rate": 83.14,
+      "real_bypass_rate": 16.86
+    },
+    "KR_format": {
+      "n": 4689,
+      "true_rate": 74.0,
+      "real_bypass_rate": 26.0
+    },
+    "KR_semantic": {
+      "n": 1302,
+      "true_rate": 49.62,
+      "real_bypass_rate": 50.38
+    }
+  }
+}

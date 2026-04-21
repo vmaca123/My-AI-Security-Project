@@ -11,17 +11,44 @@
 ```
 PII/
 ├── layer_0/        Korean Normalizer + Detector (본 연구의 핵심 기여)
+│   └── tests/      pytest suite (89 tests, CI-ready)
 ├── layer_1/        Microsoft Presidio (regex/NER)
 ├── layer_2/        AWS Bedrock Guardrails (ML-based, 50+ entities)
 ├── layer_3/        Lakera Guard v2 (prompt injection primary)
 ├── layer_4/        GPT-4o-mini Judge (LLM-as-Judge, post_call)
 ├── fuzzer/         Validity-First 한국어 PII 퍼저 v4 (91+ PII types)
 ├── evaluation/     LiteLLM Gateway 호출 평가기 + 집계 + 시각화
-├── results/        1만건 평가 결과 (summaries / figures / raw data)
-└── config/         LiteLLM config.yaml + docker-compose.yml
+├── results/
+│   ├── summaries/  최종 집계 JSON + RESULTS_10k_summary.md
+│   ├── figures/    PNG (fig1~12) — 4-way / hardest PII / latency
+│   ├── data/       Raw case-level JSON (10k × 4 configs)
+│   ├── phase1/     Latency p99 + McNemar + FP test
+│   └── phase3/     Ablation + L4 smart skip
+├── config/         LiteLLM config.yaml + docker-compose.yml
+└── datasets/       HuggingFace dataset card (CC BY-NC 4.0)
+
+.github/workflows/   Layer 0 CI (Python 3.11/3.12)
+scripts/             run_eval_pipeline.sh + build_pptx_v5.py
+Makefile             Single-command reproduction (`make all`)
 ```
 
-각 폴더에 자체 README 있음.
+각 폴더에 자체 README 있음. 빠른 탐색은 아래 Index 참조.
+
+## 🗂 Research Outcomes Index
+
+| 질문 | 결과 | 파일 |
+|---|---|---|
+| 4-way 비교 (A/B/C/D) | C(Layer 0) 94.32% vs B(LLM judge) 90.96% | [run_e_final_summary.json](PII/results/summaries/run_e_final_summary.json) |
+| KR_semantic head-to-head | C 96.39% vs B 87.40% (+8.99%p) | [fig11](PII/results/figures/fig11_kr_semantic_4way.png) |
+| **통계적 유의성 (McNemar)** | B vs C: p < 1e-28 *** | [phase1/phase1_mcnemar.json](PII/results/phase1/phase1_mcnemar.json) |
+| **Latency p99** | C 830ms vs B 4,819ms (5.8x 빠름) | [phase1/phase1_latency_precise.json](PII/results/phase1/phase1_latency_precise.json) |
+| **False positive (정상 텍스트)** | 2% (98% clean pass) | [phase1/phase1_fp_test.json](PII/results/phase1/phase1_fp_test.json) |
+| **Layer 0 내부 분해 (Ablation)** | Dict 96% 기여 / Norm 0.31%p | [phase3/phase3_ablation.json](PII/results/phase3/phase3_ablation.json) |
+| **L4 Smart Skip** | 94% 호출 절감, 동일 detection | [phase3/phase3_l4_smart_skip.json](PII/results/phase3/phase3_l4_smart_skip.json) |
+| **v4 퍼저 baseline robustness** | Δ TRUE ≤ 2%p (모든 슬라이스) | (Phase 2 — in progress) |
+| 재현 방법 | `make all` (4시간, ~$5) | [Makefile](Makefile) |
+| CI 테스트 | 89 unit tests, Py 3.11+3.12 | [.github/workflows](.github/workflows/layer_0_tests.yml) |
+| 발표 PPTX (v5) | 16 슬라이드 | [AI_Gateway_가드레일_프로젝트_발표_v5.pptx](AI_Gateway_가드레일_프로젝트_발표_v5.pptx) |
 
 ## 아키텍처
 
