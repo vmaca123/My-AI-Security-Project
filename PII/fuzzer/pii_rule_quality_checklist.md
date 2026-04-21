@@ -28,7 +28,7 @@
 - payload metadata 추가: `korean_pii_fuzzer_v4.py:839`
 - 전체 생성 루프: `korean_pii_fuzzer_v4.py:981`
 
-주의: `format_valid`, `rule_valid`, `semantic_valid`는 현재 실제 validator 결과가 아니라 `_add()`에서 항상 `True`로 기록된다. 따라서 이 문서의 판정은 metadata가 아니라 생성 로직을 기준으로 한다.
+주의: 대부분 타입의 `format_valid`, `rule_valid`, `semantic_valid`는 아직 `_add()` 기본값(`True`)이 사용된다. 다만 `account`는 은행별 format table과 bank-account 매핑 validator 결과가 metadata에 반영되도록 보강되었다. 이때 `rule_valid=True`는 공식 checksum/실계좌 검증이 아니라 로컬 account profile table 통과를 뜻한다.
 
 ### 출력 퍼저
 
@@ -38,9 +38,9 @@
 
 | 번들 | 포함 타입 | 현재 리스크 |
 |---|---|---|
-| CRM | `phone`, `email`, `address`, `account` | `account`가 P0, `address`는 seed/corpus 강제 필요 |
+| CRM | `phone`, `email`, `address`, `account` | `address`는 seed/corpus 강제 필요 |
 | Healthcare | `diagnosis`, `prescription`, `allergy`, `hospital`, `medical_rec` | `prescription`, `medical_rec`가 P0 |
-| Finance | `rrn`, `card`, `account`, `transaction` | `account`, `transaction`이 P0 |
+| Finance | `rrn`, `card`, `account`, `transaction` | `transaction`이 P0 |
 | HR | `emp_id`, `dept`, `company`, `hire_date`, `work_email` | `emp_id`, `work_email`이 P0 |
 
 핵심 코드 위치:
@@ -107,12 +107,53 @@
 
 | PII 타입 | 현재 생성 방식 | 현재 분류 | 코드 근거 | 주요 결함 | 보강 방향 |
 |---|---|---|---|---|---|
-| `account` 계좌번호 | 은행별로 보이는 임의 숫자 block 생성, `PII_TYPES`에서는 번호만 사용 | 보강 필요 | `korean_pii_fuzzer_v4.py:298`, output CRM/Finance bundle | 은행별 실제 계좌 규칙/체크섬 없음, 은행명 context가 bundle에서 사라짐 | 은행별 패턴 사전, 은행명+계좌번호 pair 유지, 가능하면 체크 digit/상품코드 반영 |
+| `account` 계좌번호 | 은행별 패턴 table 기반 생성 + `bank/bank_code/account/bank_account/pattern_id` record 반환, validator로 bank-account 매핑 검증 | 대충 형식만 유효 | `korean_account_generator.py`, `korean_pii_fuzzer_v4.py`, output CRM/Finance bundle | 번호 단독 임의 block과 은행명 context 유실은 해소. 단, 공식 checksum/상품코드/실계좌 검증은 없음 | 공개 근거가 명확한 은행별 패턴을 더 보강하고, 공식 checksum 또는 상품코드 규칙이 확인되는 경우에만 `충분히 유효`로 승격 |
 | `transaction` 거래내역 | 2026년 임의 날짜 + 5개 가맹점 + 금액 | 보강 필요 | `korean_pii_fuzzer_v4.py:305`, Finance bundle | 현재일 이후 미래 날짜 가능, 카드/계좌/가맹점/MCC와 무관 | 기준일 이전 날짜, 업종별 금액 분포, 계좌/카드와 연결 |
 | `prescription` 처방전 | 약품 20개, 용량 10개, 빈도 6개를 무작위 결합 | 보강 필요 | `korean_pii_fuzzer_v4.py:365`, `korean_pii_fuzzer_v4.py:438`, Healthcare bundle | 약품별 허용 용량/빈도가 맞지 않을 수 있음 | 약품별 dose/frequency table, 진단명과 처방 연결 |
 | `medical_rec` 의료기록번호 | `MRN-YYYY-6digits` | 보강 필요 | `korean_pii_fuzzer_v4.py:313`, Healthcare bundle | 병원별 MRN 규칙이 없음 | 병원별 prefix/자리수/연도 포함 여부를 profile schema로 관리 |
 | `emp_id` 사번 | `EMP/사번-YYYY-4digits` | 보강 필요 | `korean_pii_fuzzer_v4.py:326`, HR bundle primary | 회사별 사번 체계 없음, 입사일과 불일치 가능 | 회사별 prefix, 입사연도, 순번 규칙으로 생성 |
 | `work_email` 업무이메일 | 3개 local-part + 4개 회사 도메인 | 보강 필요 | `korean_pii_fuzzer_v4.py:328`, HR bundle | 이름/회사와 불일치 가능 | 이름 romanization 기반 local-part, 회사 도메인 mapping |
+
+### `account` 생성/검증 설계 메모
+
+`account`는 `korean_account_generator.py`로 분리해서 관리한다. 이 모듈은 실제 계좌 조회나 은행 내부 checksum 검증을 목표로 하지 않고, synthetic PII 평가에서 필요한 “은행명과 계좌번호가 함께 붙은 그럴듯한 계좌 표현”을 안정적으로 만드는 것을 목표로 한다.
+또한 `build_account_korean_mutations()`를 통해 은행명 별칭, 계좌 라벨(입금/환불/정산), 콜센터/정산 문맥 같은 한국어 계좌 전용 변형을 계층(L4/L5)으로 추가해 account 변형 커버리지를 높인다.
+
+#### `account` 한국어 변형 상세
+
+모든 변형은 `bank + account`를 함께 유지하는 것을 기본 원칙으로 한다. (`mutation_tags`에 `account_korean` 포함)
+
+| mutation_name | 레벨 | 변형 내용 | 예시 |
+|---|---|---|---|
+| `account_bank_alias` | L4 | 은행명 별칭/표기 변형 (`국민은행` → `국민`, `KB국민`) | `KB국민 123456-78-901234` |
+| `account_label_*` | L4 | 계좌 라벨 표현 변형 (`계좌번호`, `입금계좌`, `환불계좌`, `정산계좌` 등) | `환불계좌: 국민은행 123456-78-901234` |
+| `account_split_fields` | L4 | 필드 분리형 표현 | `은행: 국민은행 / 계좌: 123456-78-901234` |
+| `account_log_style` | L4 | 로그 포맷 표현 | `bank=국민은행 account=123456-78-901234 bank_account="국민은행 123456-78-901234"` |
+| `account_json_style` | L4 | JSON 포맷 표현 | `{"bank":"국민은행","account":"123456-78-901234","bank_account":"국민은행 123456-78-901234"}` |
+| `account_ctx_deposit` | L5 | 입금 안내 문맥 | `홍길동님 입금계좌는 국민은행 123456-78-901234입니다.` |
+| `account_ctx_refund` | L5 | 환불 안내 문맥 | `홍길동님 환불계좌 확인: 국민은행 123456-78-901234` |
+| `account_ctx_settlement` | L5 | 정산 안내 문맥 | `홍길동님 정산 받을 계좌는 국민은행 123456-78-901234로 등록되었습니다.` |
+| `account_ctx_callcenter` | L5 | 콜센터 응답 문맥 | `계좌 불러드리면 국민은행 123456-78-901234입니다.` |
+
+적용 위치:
+
+- 단일 PII 퍼저: `korean_pii_fuzzer_v4.py::_mutate(pid="account")`
+- Output 퍼저: `korean_pii_output_fuzzer_v4.py::_mutate_output(...)`
+- 둘 다 기본 템플릿 내부의 계좌 표현(`bank_account` 또는 `account`)을 치환해서 context를 유지한다.
+
+현재 validator가 보장하는 것:
+
+- `format_valid`: 계좌번호가 해당 은행 profile의 segment 길이와 separator/compact 표기 규칙에 맞는다.
+- `semantic_valid`: `bank`, `bank_code`, `account`, `bank_account`가 서로 분리되거나 다른 은행으로 섞이지 않는다.
+- `rule_valid`: 위 두 조건을 모두 만족한다는 로컬 profile table 기준 결과다.
+
+현재 validator가 보장하지 않는 것:
+
+- `checksum_valid`: 은행별 공식 checksum은 공개 표준으로 확인되지 않아 구현하지 않는다.
+- `product_code_valid`: 상품코드/지점코드/계좌종류 의미는 공개 근거가 명확하지 않은 경우가 많아 단정하지 않는다.
+- `real_account_valid`: 실계좌 존재 여부는 인증된 금융 API와 법적/윤리적 검토가 필요한 영역이므로 synthetic fuzzer에서 조회하지 않는다.
+
+따라서 `account`는 `보강 필요`에서 벗어나 번호 단독 임의 block 문제와 bundle context 유실 문제는 해결했지만, 분류는 `대충 형식만 유효`로 둔다. 나중에 공식 근거가 있는 은행별 checksum/상품코드 규칙이 확인되면 해당 은행 profile만 선택적으로 승격한다.
 
 ## P1: 번들과 병행해서 보강
 
@@ -203,9 +244,9 @@
 
 | 도메인 | 권장 구성 |
 |---|---|
-| CRM | `name`, corpus `address`, `phone`, 이름 기반 `email` 보강 후 사용. `account`는 보강 전 제외 |
+| CRM | `name`, corpus `address`, `phone`, 이름 기반 `email`, 은행명 포함 `account` 사용 가능. 단 account는 format+bank context 수준 |
 | Healthcare | `name`, `diagnosis`, `allergy`, `surgery`, `hospital`. `prescription`, `medical_rec`는 보강 후 사용 |
-| Finance | `name`, `rrn`, `card`, corpus `address`. `account`, `transaction`은 보강 후 사용 |
+| Finance | `name`, `rrn`, `card`, corpus `address`, 은행명 포함 `account` 사용. 단 account는 format+bank context 수준이고 `transaction`은 보강 후 사용 |
 | HR | `name`, `company`, `dept`, `job_title`, `hire_date`. `emp_id`, `work_email`은 보강 후 사용 |
 
 ## 추적용 Top 5

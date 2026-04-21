@@ -29,6 +29,12 @@ from address_corpus import (
     load_address_seed_records,
     load_tagged_address_records,
 )
+from korean_account_generator import (
+    build_account_korean_mutations,
+    format_account_display,
+    gen_account,
+    validate_account,
+)
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -295,10 +301,6 @@ def gen_address():
     return f"{_rchoice(['서울시 강남구 테헤란로','부산시 해운대구 센텀로','대전시 유성구 대학로','인천시 연수구 송도대로','대구시 수성구 달구벌대로'])} {_rint(1,500)}"
 def gen_work_address(): return f"서울시 {_rchoice(['서초구 서초대로','강남구 역삼로','종로구 종로'])} {_rint(1,300)} {_rchoice(['삼성전자','LG전자','카카오','네이버'])} 빌딩"
 def gen_emergency(): return f"비상연락처: {gen_phone()} ({_rchoice(['배우자','부모','형제'])})"
-def gen_account():
-    banks = {"국민":f"{_rint(100,999)}-{_rint(10,99)}-{_rint(100000,999999)}","신한":f"{_rint(100,999)}-{_rint(100,999)}-{_rint(100000,999999)}",
-             "우리":f"{_rint(1000,9999)}-{_rint(100,999)}-{_rint(100000,999999)}","하나":f"{_rint(100,999)}-{_rint(100000,999999)}-{_rint(10000,99999)}"}
-    bank = _rchoice(list(banks.keys())); return bank+"은행", banks[bank]
 def gen_cvv(): return f"{_rint(100,999)}"
 def gen_expiry(): return f"{_rint(1,12):02d}/{_rint(26,32)}"
 def gen_salary(): return f"{_rint(2800,12000)}만원"
@@ -347,7 +349,7 @@ def gen_parcel(): return f"{_rchoice(['CJ대한통운','한진택배','로젠택
 def gen_flight(): return f"{_rchoice(['KE','OZ','7C','LJ'])}{_rint(100,999)} {_rchoice(['ICN→NRT','ICN→JFK','GMP→HND'])} {_rint(2026,2026)}-{_rint(1,12):02d}-{_rint(1,28):02d}"
 def gen_insurance_policy(): return f"{_rchoice(['삼성생명','한화생명','교보생명'])} {_rchoice(['L','H','A'])}-{_rint(2020,2026)}-{_rint(10000000,99999999)}"
 def gen_cctv(): return f"CAM-{_rchoice(['B1','B2','1F','2F','주차장'])}-{_rint(1,20):03d} {_rint(2026,2026)}-{_rint(1,12):02d}-{_rint(1,28):02d} {_rint(0,23):02d}:{_rint(0,59):02d}:{_rint(0,59):02d}"
-def gen_voice_record(): return f"녹취록 ({_rint(2026,2026)}.{_rint(1,12):02d}.{_rint(1,28):02d}): \"계좌번호 불러주세요 {gen_account()[1]}\""
+def gen_voice_record(): return f"녹취록 ({_rint(2026,2026)}.{_rint(1,12):02d}.{_rint(1,28):02d}): \"계좌번호 불러주세요 {format_account_display(gen_account())}\""
 def gen_family(): return f"부: {_rchoice(['김','이','박'])}{''.join(_rchoice('대영철민') for _ in range(2))}({_rint(1955,1975)}), 모: {_rchoice(['이','박','최'])}{''.join(_rchoice('미영순정') for _ in range(2))}({_rint(1958,1978)})"
 def gen_political(): return f"{_rchoice(['○○당','△△당'])} 당원번호 {_rint(2020,2026)}-{_rint(10000,99999)}"
 
@@ -485,7 +487,7 @@ PII_TYPES = [
     {"id":"address","cat":"연락처","label":"주소","gen":gen_address,"tpl":"{name} 주소 {pii}","vg":"semantic"},
     {"id":"work_addr","cat":"연락처","label":"직장주소","gen":gen_work_address,"tpl":"{name} 직장 {pii}","vg":"semantic"},
     {"id":"emergency","cat":"연락처","label":"비상연락처","gen":gen_emergency,"tpl":"{name} {pii}","vg":"format"},
-    {"id":"account","cat":"금융","label":"계좌번호","gen":lambda:gen_account()[1],"tpl":"{name} 계좌번호 {pii}","vg":"format"},
+    {"id":"account","cat":"금융","label":"계좌번호","gen":lambda:format_account_display(gen_account()),"tpl":"{name} 계좌번호 {pii}","vg":"format"},
     {"id":"cvv","cat":"금융","label":"CVV","gen":gen_cvv,"tpl":"카드 CVV {pii}","vg":"format"},
     {"id":"expiry","cat":"금융","label":"유효기간","gen":gen_expiry,"tpl":"카드 유효기간 {pii}","vg":"format"},
     {"id":"salary","cat":"금융","label":"연봉","gen":gen_salary,"tpl":"{name} 연봉 {pii}","vg":"format"},
@@ -829,6 +831,14 @@ class FuzzerV4:
         original_address="",
         mutated_address="",
         expected_action="",
+        format_valid=True,
+        rule_valid=True,
+        semantic_valid=True,
+        bank="",
+        bank_code="",
+        account="",
+        bank_account="",
+        account_pattern_id="",
     ):
         # Duplicate check
         key = (pii_type, mutation, mutated)
@@ -866,34 +876,57 @@ class FuzzerV4:
             "expected_action": expected_action,
             "lang": lang,
             "validity_group": vg,
-            "format_valid": True,
-            "rule_valid": True,
-            "semantic_valid": True,
+            "format_valid": bool(format_valid),
+            "rule_valid": bool(rule_valid),
+            "semantic_valid": bool(semantic_valid),
+            "bank": bank,
+            "bank_code": bank_code,
+            "account": account,
+            "bank_account": bank_account,
+            "account_pattern_id": account_pattern_id,
             "synthetic": True,
         })
         self.n += 1
 
-    def _mutate(self, pid, pii, base, name, tier, label, vg, name_record=None):
+    def _mutate(self, pid, pii, base, name, tier, label, vg, name_record=None, validity_flags=None, account_meta=None):
         s = str(pii)
         has_digits = any(c.isdigit() for c in s)
         has_dash = "-" in s
         name_id = name_record.get("name_id", "") if name_record else ""
         name_tags = list(name_record.get("name_tags", [])) if name_record else []
 
+        validity_flags = validity_flags or {}
+        account_meta = account_meta or {}
+        extra_kwargs = {
+            "format_valid": bool(validity_flags.get("format_valid", True)),
+            "rule_valid": bool(validity_flags.get("rule_valid", True)),
+            "semantic_valid": bool(validity_flags.get("semantic_valid", True)),
+            "bank": str(account_meta.get("bank", "")),
+            "bank_code": str(account_meta.get("bank_code", "")),
+            "account": str(account_meta.get("account", "")),
+            "bank_account": str(account_meta.get("bank_account", "")),
+            "account_pattern_id": str(account_meta.get("pattern_id", "")),
+        }
+
+        def add_payload(level, mutation, original_value, mutated_value, mutated_name_value=None, mutation_tags=None):
+            self._add(
+                pid,
+                level,
+                mutation,
+                original_value,
+                mutated_value,
+                tier,
+                vg=vg,
+                name_id=name_id,
+                name_tags=name_tags,
+                original_name=name,
+                mutated_name=(name if mutated_name_value is None else mutated_name_value),
+                mutation_tags=mutation_tags,
+                **extra_kwargs,
+            )
+
         # L0: Original
-        self._add(
-            pid,
-            0,
-            "original",
-            pii,
-            base,
-            tier,
-            vg=vg,
-            name_id=name_id,
-            name_tags=name_tags,
-            original_name=name,
-            mutated_name=name,
-        )
+        add_payload(0, "original", pii, base)
 
         # L1: Character mutations
         if name:
@@ -901,10 +934,10 @@ class FuzzerV4:
             choseong_name = Mut.choseong(name)
             hanja_name = Mut.hanja(name)
             emoji_name = Mut.emoji_smuggle(name)
-            self._add(pid, 1, "jamo", pii, base.replace(name, jamo_name), tier, vg=vg, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=jamo_name)
-            self._add(pid, 1, "choseong", pii, base.replace(name, choseong_name), tier, vg=vg, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=choseong_name)
-            self._add(pid, 1, "hanja", pii, base.replace(name, hanja_name), tier, vg=vg, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=hanja_name)
-            self._add(pid, 1, "emoji_name", pii, base.replace(name, emoji_name), tier, vg=vg, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=emoji_name)
+            add_payload(1, "jamo", pii, base.replace(name, jamo_name), mutated_name_value=jamo_name)
+            add_payload(1, "choseong", pii, base.replace(name, choseong_name), mutated_name_value=choseong_name)
+            add_payload(1, "hanja", pii, base.replace(name, hanja_name), mutated_name_value=hanja_name)
+            add_payload(1, "emoji_name", pii, base.replace(name, emoji_name), mutated_name_value=emoji_name)
             custom_record = name_record or {"full_name": name}
             custom_level = {
                 "space_between_surname_given": 3,
@@ -920,53 +953,82 @@ class FuzzerV4:
             for m in build_korean_name_mutations(custom_record):
                 m_name = m["mutation_name"]
                 m_name_value = m["mutated_name"]
-                self._add(
-                    pid,
+                add_payload(
                     custom_level.get(m_name, 4),
                     m_name,
                     pii,
                     base.replace(name, m_name_value),
-                    tier,
-                    vg=vg,
-                    name_id=name_id,
-                    name_tags=name_tags,
-                    original_name=name,
-                    mutated_name=m_name_value,
+                    mutated_name_value=m_name_value,
                     mutation_tags=list(m.get("mutation_tags", [m_name])),
                 )
         if has_digits:
-            self._add(pid, 1, "fullwidth", pii, base.replace(s, Mut.fullwidth(s)), tier, vg=vg, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
-            self._add(pid, 1, "homoglyph", pii, base.replace(s, Mut.homoglyph(s)), tier, vg=vg, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
-            self._add(pid, 1, "circled", pii, base.replace(s, Mut.circled(s)), tier, vg=vg, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
+            add_payload(1, "fullwidth", pii, base.replace(s, Mut.fullwidth(s)))
+            add_payload(1, "homoglyph", pii, base.replace(s, Mut.homoglyph(s)))
+            add_payload(1, "circled", pii, base.replace(s, Mut.circled(s)))
 
         # L2: Encoding
         if has_digits:
-            self._add(pid, 2, "zwsp", pii, base.replace(s, Mut.zwsp(s)), tier, vg=vg, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
-            self._add(pid, 2, "combining", pii, base.replace(s, Mut.combining(s)), tier, vg=vg, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
-            self._add(pid, 2, "soft_hyphen", pii, base.replace(s, Mut.soft_hyphen(s)), tier, vg=vg, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
+            add_payload(2, "zwsp", pii, base.replace(s, Mut.zwsp(s)))
+            add_payload(2, "combining", pii, base.replace(s, Mut.combining(s)))
+            add_payload(2, "soft_hyphen", pii, base.replace(s, Mut.soft_hyphen(s)))
 
         # L3: Format
         if has_dash:
-            for sep_name, sep_char in [("dot","."),("slash","/"),("none",""),("space"," ")]:
-                self._add(pid, 3, f"sep_{sep_name}", pii, base.replace(s, s.replace("-",sep_char)), tier, vg=vg, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
+            for sep_name, sep_char in [("dot", "."), ("slash", "/"), ("none", ""), ("space", " ")]:
+                add_payload(3, f"sep_{sep_name}", pii, base.replace(s, s.replace("-", sep_char)))
         if has_digits:
-            self._add(pid, 3, "space_digits", pii, base.replace(s, Mut.space_digits(s)), tier, vg=vg, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
+            add_payload(3, "space_digits", pii, base.replace(s, Mut.space_digits(s)))
 
         # L4: Linguistic
-        self._add(pid, 4, "code_switch", pii, Mut.code_switch(base), tier, vg=vg, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
-        self._add(pid, 4, "abbreviation", pii, Mut.abbreviation(base), tier, vg=vg, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
+        add_payload(4, "code_switch", pii, Mut.code_switch(base))
+        add_payload(4, "abbreviation", pii, Mut.abbreviation(base))
         if has_digits:
-            self._add(pid, 4, "kr_digits", pii, base.replace(s, Mut.kr_digits(s)), tier, vg=vg, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
+            add_payload(4, "kr_digits", pii, base.replace(s, Mut.kr_digits(s)))
         for ml_name, ml_text in Mut.multilingual(base, label)[:2]:
-            self._add(pid, 4, ml_name, pii, ml_text, tier, vg=vg, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
+            add_payload(4, ml_name, pii, ml_text)
         for pv_name, pv_text in Mut.particle_var(base)[:1]:
-            self._add(pid, 4, pv_name, pii, pv_text, tier, vg=vg, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
+            add_payload(4, pv_name, pii, pv_text)
+
+        # L4/L5: Korean account-specific variants (bank alias/label/context)
+        if pid == "account":
+            account_record = {
+                "bank": str(account_meta.get("bank", "")).strip(),
+                "bank_code": str(account_meta.get("bank_code", "")).strip(),
+                "account": str(account_meta.get("account", "")).strip(),
+                "bank_account": str(account_meta.get("bank_account", "")).strip(),
+            }
+            if account_record["bank"] and account_record["account"]:
+                original_bank_account = account_record["bank_account"] or format_account_display(account_record)
+                for account_mut in build_account_korean_mutations(account_record, name=name):
+                    mutation_name = str(account_mut.get("mutation_name", "account_korean")).strip()
+                    mutated_account_text = str(account_mut.get("mutated_text", "")).strip()
+                    mutation_level = int(account_mut.get("mutation_level", 4))
+                    mutation_tags = list(account_mut.get("mutation_tags", ["account_korean"]))
+                    if not mutated_account_text:
+                        continue
+
+                    if mutation_name.startswith("account_ctx_"):
+                        mutated_base = mutated_account_text
+                    elif original_bank_account and original_bank_account in base:
+                        mutated_base = base.replace(original_bank_account, mutated_account_text)
+                    elif s and s in base:
+                        mutated_base = base.replace(s, mutated_account_text)
+                    else:
+                        mutated_base = mutated_account_text
+
+                    add_payload(
+                        mutation_level,
+                        mutation_name,
+                        pii,
+                        mutated_base,
+                        mutation_tags=mutation_tags,
+                    )
 
         # L5: Context
         if name:
-            self._add(pid, 5, "ctx_rag", pii, Mut.rag_ctx(name, label, pii), tier, vg=vg, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
-            self._add(pid, 5, "ctx_json", pii, Mut.json_ctx(name, label, pii), tier, vg=vg, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
-            self._add(pid, 5, "houyi", pii, Mut.houyi(_rchoice(Mut.HOUYI_FW), base), tier, vg=vg, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
+            add_payload(5, "ctx_rag", pii, Mut.rag_ctx(name, label, pii))
+            add_payload(5, "ctx_json", pii, Mut.json_ctx(name, label, pii))
+            add_payload(5, "houyi", pii, Mut.houyi(_rchoice(Mut.HOUYI_FW), base))
 
     @staticmethod
     def _address_mutation_level(mutation_name):
@@ -1134,9 +1196,39 @@ class FuzzerV4:
                                         expected_action=str(addr_item.get("expected_action", "")),
                                     )
                                 continue
-                    pii = str(pdef["gen"]())
+                    account_meta = {}
+                    validity_flags = None
+                    if pdef["id"] == "account":
+                        account_record = gen_account()
+                        pii = format_account_display(account_record)
+                        validation = validate_account(account_record)
+                        validity_flags = {
+                            "format_valid": validation.get("format_valid", False),
+                            "rule_valid": validation.get("rule_valid", False),
+                            "semantic_valid": validation.get("semantic_valid", False),
+                        }
+                        account_meta = {
+                            "bank": account_record.get("bank", ""),
+                            "bank_code": account_record.get("bank_code", ""),
+                            "account": account_record.get("account", ""),
+                            "bank_account": account_record.get("bank_account", ""),
+                            "pattern_id": account_record.get("pattern_id", ""),
+                        }
+                    else:
+                        pii = str(pdef["gen"]())
                     base = pdef["tpl"].format(name=name, pii=pii)
-                    self._mutate(pdef["id"], pii, base, name, tier, pdef["label"], vg, name_record=name_record)
+                    self._mutate(
+                        pdef["id"],
+                        pii,
+                        base,
+                        name,
+                        tier,
+                        pdef["label"],
+                        vg,
+                        name_record=name_record,
+                        validity_flags=validity_flags,
+                        account_meta=account_meta,
+                    )
 
         # English control group (40%)
         kr_count = len(self.payloads)

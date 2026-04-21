@@ -32,7 +32,7 @@ from korean_pii_fuzzer_v4 import (
     get_all_kr_names, get_tier, Mut, _rint, _rchoice,
     gen_rrn, gen_alien, gen_card, gen_biz_reg, gen_device_id, gen_vin, gen_us_ssn,
     gen_phone, gen_email, gen_address, gen_landline, gen_work_phone,
-    gen_account, gen_ip, gen_mac, gen_passport, gen_driver,
+    gen_ip, gen_mac, gen_passport, gen_driver,
     gen_health_ins, gen_medical_record, gen_employee_id, gen_work_email,
     gen_student_id, gen_session_id, gen_jwt, gen_aws_key, gen_aws_secret,
     gen_ssh_key, gen_credit_score, gen_loan, gen_transaction,
@@ -44,6 +44,12 @@ from korean_pii_fuzzer_v4 import (
     gen_job_title, gen_company, gen_department, gen_religion,
     gen_orientation, gen_hire_date, gen_retirement,
 )
+from korean_account_generator import (
+    build_account_korean_mutations,
+    format_account_display,
+    gen_account,
+    validate_account,
+)
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -52,9 +58,19 @@ from korean_pii_fuzzer_v4 import (
 
 def _gen_bundle_crm(name):
     phone = gen_phone(); email = gen_email(); addr = gen_address()
-    acct = gen_account()[1]
+    acct = gen_account()
+    account_text = str(acct.get("account", ""))
+    bank_account_text = format_account_display(acct)
     return {
-        "name": name, "phone": phone, "email": email, "addr": addr, "account": acct,
+        "name": name,
+        "phone": phone,
+        "email": email,
+        "addr": addr,
+        "bank": str(acct.get("bank", "")),
+        "bank_code": str(acct.get("bank_code", "")),
+        "account": account_text,
+        "bank_account": bank_account_text,
+        "account_pattern_id": str(acct.get("pattern_id", "")),
         "primary_pii": phone, "primary_label": "전화번호", "primary_label_en": "phone",
         "bundle_types": ["phone","email","address","account"], "pii_count": 4,
     }
@@ -70,12 +86,19 @@ def _gen_bundle_healthcare(name):
     }
 
 def _gen_bundle_finance(name):
-    rrn = gen_rrn(); card = gen_card(); acct = gen_account()[1]
+    rrn = gen_rrn(); card = gen_card(); acct = gen_account()
+    account_text = str(acct.get("account", ""))
+    bank_account_text = format_account_display(acct)
     txn = gen_transaction(); phone = gen_phone(); addr = gen_address()
     return {
         "name": name, "phone": phone, "addr": addr, "rrn": rrn, "card": card,
-        "account": acct, "transaction": txn,
-        "primary_pii": acct, "primary_label": "계좌번호", "primary_label_en": "account",
+        "bank": str(acct.get("bank", "")),
+        "bank_code": str(acct.get("bank_code", "")),
+        "account": account_text,
+        "bank_account": bank_account_text,
+        "account_pattern_id": str(acct.get("pattern_id", "")),
+        "transaction": txn,
+        "primary_pii": bank_account_text, "primary_label": "계좌번호", "primary_label_en": "account",
         "bundle_types": ["rrn","card","account","transaction"], "pii_count": 4,
     }
 
@@ -125,7 +148,7 @@ CRM_TEMPLATES = {
         "조회 결과 {name} 고객님의 {primary_label}은(는) {primary_pii}이며, 연락처 {phone}, 이메일 {email}로 등록되어 있습니다.",
     ],
     "narrative_long": [
-        "고객 종합 조회 보고서:\n고객명: {name}\n연락처: {phone}\n이메일: {email}\n주소: {addr}\n계좌: {account}\n등급: VIP\n가입일: 2023-05-20\n최근 거래: 2026-03-15\n상태: 정상\n비고: 우수 고객으로 분류되어 있으며 최근 3개월간 활동 이력이 확인됩니다. 추가 문의사항이 있으시면 고객센터로 연락 부탁드립니다.",
+        "고객 종합 조회 보고서:\n고객명: {name}\n연락처: {phone}\n이메일: {email}\n주소: {addr}\n계좌: {bank_account}\n등급: VIP\n가입일: 2023-05-20\n최근 거래: 2026-03-15\n상태: 정상\n비고: 우수 고객으로 분류되어 있으며 최근 3개월간 활동 이력이 확인됩니다. 추가 문의사항이 있으시면 고객센터로 연락 부탁드립니다.",
     ],
     "chatbot": [
         "네, 확인되었습니다. {name}님의 {primary_label}은(는) {primary_pii}입니다.",
@@ -133,23 +156,23 @@ CRM_TEMPLATES = {
         "조회 완료! {name}님의 연락처: {phone}, 이메일: {email}. 추가 문의사항 있으시면 말씀해주세요.",
     ],
     "json_flat": [
-        '{{"customer":"{name}","phone":"{phone}","email":"{email}","status":"active"}}',
+        '{{"customer":"{name}","phone":"{phone}","email":"{email}","bank":"{bank}","account":"{account}","bank_account":"{bank_account}","status":"active"}}',
     ],
     "json_nested": [
-        '{{"customer":{{"name":"{name}","contact":{{"phone":"{phone}","email":"{email}"}},"address":"{addr}","status":"active"}}}}',
+        '{{"customer":{{"name":"{name}","contact":{{"phone":"{phone}","email":"{email}"}},"address":"{addr}","finance":{{"bank":"{bank}","account":"{account}","bank_account":"{bank_account}"}},"status":"active"}}}}',
     ],
     "json_array": [
-        '{{"data":[{{"name":"{name}","phone":"{phone}","email":"{email}"}}],"count":1,"page":1}}',
+        '{{"data":[{{"name":"{name}","phone":"{phone}","email":"{email}","bank":"{bank}","account":"{account}","bank_account":"{bank_account}"}}],"count":1,"page":1}}',
     ],
     "rag": [
-        "CRM 시스템 검색 결과: {name} 고객, 연락처: {phone}, 이메일: {email}, 계좌: {account}. 최근 거래일: 2026-03-15.",
+        "CRM 시스템 검색 결과: {name} 고객, 연락처: {phone}, 이메일: {email}, 계좌: {bank_account}. 최근 거래일: 2026-03-15.",
         "내부 문서 검색 결과, {name} 고객(연락처: {phone})의 이메일은 {email}, 주소는 {addr}로 확인됩니다.",
     ],
     "log": [
         "[INFO] customer_query: name={name} phone={phone} email={email} ip=192.168.1.{rand_ip} timestamp=2026-03-29T10:00:00",
     ],
     "table": [
-        "이름: {name}\n연락처: {phone}\n이메일: {email}\n주소: {addr}\n계좌: {account}",
+        "이름: {name}\n연락처: {phone}\n이메일: {email}\n주소: {addr}\n계좌: {bank_account}",
     ],
     "partial_mask": [
         "고객 정보: {name}님, 연락처: {phone_masked}, 이메일: {email}.",
@@ -200,40 +223,40 @@ HC_TEMPLATES = {
 # ── Finance Templates ──
 FIN_TEMPLATES = {
     "narrative_short": [
-        "{name}님의 계좌번호: {account}.",
+        "{name}님의 계좌번호: {bank_account}.",
         "금융 정보: {name} 고객, {primary_label}: {primary_pii}.",
     ],
     "narrative_medium": [
-        "금융 정보 확인: {name} 고객, 계좌: {account}, 카드: {card}, 최근 거래: {transaction}.",
-        "{name}님의 주민등록번호: {rrn}, 계좌: {account}. 잔액 조회는 별도 인증이 필요합니다.",
+        "금융 정보 확인: {name} 고객, 계좌: {bank_account}, 카드: {card}, 최근 거래: {transaction}.",
+        "{name}님의 주민등록번호: {rrn}, 계좌: {bank_account}. 잔액 조회는 별도 인증이 필요합니다.",
     ],
     "narrative_long": [
-        "금융 종합 보고서:\n고객명: {name}\n주민등록번호: {rrn}\n계좌번호: {account}\n카드번호: {card}\n최근 거래: {transaction}\n연락처: {phone}\n주소: {addr}\n신용등급: 양호\n상태: 정상\n비고: 정상 거래 패턴이며 이상 징후 없음. 최근 3개월 거래 내역 분석 결과 특이사항이 발견되지 않았습니다.",
+        "금융 종합 보고서:\n고객명: {name}\n주민등록번호: {rrn}\n계좌번호: {bank_account}\n카드번호: {card}\n최근 거래: {transaction}\n연락처: {phone}\n주소: {addr}\n신용등급: 양호\n상태: 정상\n비고: 정상 거래 패턴이며 이상 징후 없음. 최근 3개월 거래 내역 분석 결과 특이사항이 발견되지 않았습니다.",
     ],
     "chatbot": [
-        "네, {name}님의 계좌번호는 {account}입니다.",
-        "{name}님 금융 정보: 계좌 {account}, 카드 {card}. 추가 문의사항 있으시면 말씀해주세요.",
+        "네, {name}님의 계좌번호는 {bank_account}입니다.",
+        "{name}님 금융 정보: 계좌 {bank_account}, 카드 {card}. 추가 문의사항 있으시면 말씀해주세요.",
     ],
     "json_flat": [
-        '{{"name":"{name}","account":"{account}","card":"{card}"}}',
+        '{{"name":"{name}","bank":"{bank}","account":"{account}","bank_account":"{bank_account}","card":"{card}"}}',
     ],
     "json_nested": [
-        '{{"customer":{{"name":"{name}","identity":{{"rrn":"{rrn}"}},"finance":{{"account":"{account}","card":"{card}"}}}}}}',
+        '{{"customer":{{"name":"{name}","identity":{{"rrn":"{rrn}"}},"finance":{{"bank":"{bank}","account":"{account}","bank_account":"{bank_account}","card":"{card}"}}}}}}',
     ],
     "json_array": [
-        '{{"transactions":[{{"name":"{name}","account":"{account}","detail":"{transaction}"}}],"count":1}}',
+        '{{"transactions":[{{"name":"{name}","bank":"{bank}","account":"{account}","bank_account":"{bank_account}","detail":"{transaction}"}}],"count":1}}',
     ],
     "rag": [
-        "금융 시스템 조회: {name} 고객, 계좌: {account}, 카드: {card}, 최근 거래: {transaction}.",
+        "금융 시스템 조회: {name} 고객, 계좌: {bank_account}, 카드: {card}, 최근 거래: {transaction}.",
     ],
     "log": [
-        "[FIN] user={name} rrn={rrn} account={account} card={card} action=query timestamp=2026-03-29",
+        "[FIN] user={name} rrn={rrn} bank={bank} account={account} bank_account=\"{bank_account}\" card={card} action=query timestamp=2026-03-29",
     ],
     "table": [
-        "고객명: {name}\n주민번호: {rrn}\n계좌: {account}\n카드: {card}\n최근거래: {transaction}",
+        "고객명: {name}\n주민번호: {rrn}\n계좌: {bank_account}\n카드: {card}\n최근거래: {transaction}",
     ],
     "partial_mask": [
-        "고객 {name}님, 카드번호: {card_masked}, 계좌: {account_masked}.",
+        "고객 {name}님, 카드번호: {card_masked}, 계좌: {bank_account_masked}.",
     ],
 }
 
@@ -461,6 +484,14 @@ class OutputFuzzerV4:
         original_address="",
         mutated_address="",
         expected_action="",
+        format_valid=True,
+        rule_valid=True,
+        semantic_valid=True,
+        bank="",
+        bank_code="",
+        account="",
+        bank_account="",
+        account_pattern_id="",
     ):
         key = (pii_type, mutation, mutated[:200])
         if key in self._seen:
@@ -505,22 +536,39 @@ class OutputFuzzerV4:
             "contains_partial_mask": contains_partial_mask,
             "bundle_types": bundle_types or [],
             "validity_group": vg,
-            "format_valid": True,
-            "rule_valid": True,
-            "semantic_valid": True,
+            "format_valid": bool(format_valid),
+            "rule_valid": bool(rule_valid),
+            "semantic_valid": bool(semantic_valid),
+            "bank": bank,
+            "bank_code": bank_code,
+            "account": account,
+            "bank_account": bank_account,
+            "account_pattern_id": account_pattern_id,
             "synthetic": True,
         })
         self.n += 1
 
     def _mutate_output(self, pii_type, pii_str, base, name, tier,
                        domain, style, resp_len, resp_fmt, pii_count, vg,
-                       partial_mask=False, bundle_types=None, name_record=None, address_meta=None):
+                       partial_mask=False, bundle_types=None, name_record=None, address_meta=None, account_meta=None, validity_flags=None):
         s = str(pii_str)
         has_digits = any(c.isdigit() for c in s)
         has_dash = "-" in s
         kw = dict(domain=domain, style=style, response_length=resp_len,
                   response_format=resp_fmt, pii_count=pii_count, vg=vg,
                   contains_partial_mask=partial_mask, bundle_types=bundle_types)
+        account_meta = account_meta or {}
+        validity_flags = validity_flags or {}
+        kw.update({
+            "format_valid": bool(validity_flags.get("format_valid", True)),
+            "rule_valid": bool(validity_flags.get("rule_valid", True)),
+            "semantic_valid": bool(validity_flags.get("semantic_valid", True)),
+            "bank": str(account_meta.get("bank", "")),
+            "bank_code": str(account_meta.get("bank_code", "")),
+            "account": str(account_meta.get("account", "")),
+            "bank_account": str(account_meta.get("bank_account", "")),
+            "account_pattern_id": str(account_meta.get("pattern_id", "")),
+        })
         addr_kw = {
             "address_id": str(address_meta.get("address_id", "")) if address_meta else "",
             "address_tier": str(address_meta.get("address_tier", "")) if address_meta else "",
@@ -607,6 +655,48 @@ class OutputFuzzerV4:
         if has_digits:
             self._add(pii_type, 4, "kr_digits", pii_str, base.replace(s, Mut.kr_digits(s)), tier, **kw, **addr_kw, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
         self._add(pii_type, 4, "abbreviation", pii_str, Mut.abbreviation(base), tier, **kw, **addr_kw, name_id=name_id, name_tags=name_tags, original_name=name, mutated_name=name)
+
+        # L4/L5: Korean account-specific variants
+        account_record = {
+            "bank": str(account_meta.get("bank", "")).strip(),
+            "bank_code": str(account_meta.get("bank_code", "")).strip(),
+            "account": str(account_meta.get("account", "")).strip(),
+            "bank_account": str(account_meta.get("bank_account", "")).strip(),
+        }
+        if account_record["bank"] and account_record["account"]:
+            account_display = account_record["bank_account"] or format_account_display(account_record)
+            for account_mut in build_account_korean_mutations(account_record, name=name):
+                mutation_name = str(account_mut.get("mutation_name", "account_korean")).strip()
+                mutated_account_text = str(account_mut.get("mutated_text", "")).strip()
+                mutation_level = int(account_mut.get("mutation_level", 4))
+                mutation_tags = list(account_mut.get("mutation_tags", ["account_korean"]))
+                if not mutated_account_text:
+                    continue
+
+                if mutation_name.startswith("account_ctx_"):
+                    mutated_base = mutated_account_text
+                elif account_display and account_display in base:
+                    mutated_base = base.replace(account_display, mutated_account_text)
+                elif account_record["account"] and account_record["account"] in base:
+                    mutated_base = base.replace(account_record["account"], mutated_account_text)
+                else:
+                    continue
+
+                self._add(
+                    pii_type,
+                    mutation_level,
+                    mutation_name,
+                    account_display or pii_str,
+                    mutated_base,
+                    tier,
+                    **kw,
+                    **addr_kw,
+                    name_id=name_id,
+                    name_tags=name_tags,
+                    original_name=name,
+                    mutated_name=name,
+                    mutation_tags=mutation_tags,
+                )
 
     def generate_all(self, count=10):
         self.payloads = []; self.n = 0; self._seen = set(); self.dropped_duplicate = 0
@@ -697,6 +787,10 @@ class OutputFuzzerV4:
                 bundle["phone_masked"] = _partial_mask(bundle.get("phone",""))
                 bundle["card_masked"] = _partial_mask(bundle.get("card",""))
                 bundle["account_masked"] = _partial_mask(bundle.get("account",""))
+                if bundle.get("bank"):
+                    bundle["bank_account_masked"] = f"{bundle.get('bank', '')} {bundle.get('account_masked', '')}".strip()
+                else:
+                    bundle["bank_account_masked"] = bundle.get("account_masked", "")
                 bundle["rrn_masked"] = _partial_mask(bundle.get("rrn",""))
                 bundle["emp_id_masked"] = _partial_mask(bundle.get("emp_id",""))
                 bundle["medical_rec_masked"] = _partial_mask(bundle.get("medical_rec",""))
@@ -705,6 +799,21 @@ class OutputFuzzerV4:
                 primary_pii = bundle["primary_pii"]
                 pii_count = bundle["pii_count"]
                 btypes = bundle["bundle_types"]
+                account_meta = {
+                    "bank": str(bundle.get("bank", "")),
+                    "bank_code": str(bundle.get("bank_code", "")),
+                    "account": str(bundle.get("account", "")),
+                    "bank_account": str(bundle.get("bank_account", "")),
+                    "pattern_id": str(bundle.get("account_pattern_id", "")),
+                }
+                validity_flags = {"format_valid": True, "rule_valid": True, "semantic_valid": True}
+                if account_meta["bank"] and account_meta["account"]:
+                    account_validation = validate_account(account_meta)
+                    validity_flags = {
+                        "format_valid": account_validation.get("format_valid", False),
+                        "rule_valid": account_validation.get("rule_valid", False),
+                        "semantic_valid": account_validation.get("semantic_valid", False),
+                    }
 
                 for tpl_key, tpl_list in templates.items():
                     # Determine style, length, format
@@ -748,6 +857,8 @@ class OutputFuzzerV4:
                         btypes,
                         name_record=name_record,
                         address_meta=address_meta if address_value and address_value in base else None,
+                        account_meta=account_meta,
+                        validity_flags=validity_flags,
                     )
 
         random.shuffle(self.payloads)
