@@ -63,8 +63,36 @@ result = layer0.process("최영희 연봉 7409만원")
 python korean_layer0_guardrail.py
 ```
 
-## 33종 PII 탐지 카테고리
+## 탐지 카테고리
 
-**정규식 기반 (17)**: rrn(주민번호), brn(사업자번호), frn(외국인등록번호), driver, passport, phone, landline, account, card, jwt, ssh, session, gps, mac, ip, vin, plate
+### 정규식 기반 패턴 (42종)
 
-**키워드 사전 기반 (16, 텍스트형 PII)**: allergy(알레르기), prescription(처방), surgery(수술), diagnosis(진단), blood(혈액형), body(신체정보), salary(연봉), retirement(퇴직), company(회사), job_title(직책), dept(부서), degree(학위), gpa, family(가족관계), marital(혼인), religion(종교)
+**핵심 토큰형 PII** — session, jwt, crypto, biometric, court, crime, gps, aws_key, aws_secret, ssh, mac, ip, salary, retirement, credit_score, body, gpa, political, family, dob, hire_date, grad_year
+
+**v2 보강 (P0 — bundle primary)** — `medical_rec`(MRN), `emp_id`(EMP/사번)
+
+**v2 보강 (P1 — 자주 유출되는 구조화 토큰)** — `driver`(운전면허), `passport`(여권), `biz_reg`(사업자등록번호), `plate`(번호판), `parcel`(택배송장), `cctv`, `transaction_id`(TRX...), `approval_code`(승인번호), `voice`(녹취록), `visa`(체류자격), `flight`(항공편), `vehicle_reg`(차량등록), `insurance4`(4대보험), `ins_policy`(보험증권), `immigration`(출입국), `student_id`(학번), `stock`(증권계좌)
+
+**숫자형 PII 백업** — `rrn_pattern`, `phone_kr`, `card`, `vin` (Presidio/Bedrock 뚫린 경우 대비)
+
+### 키워드 사전 기반 (22종, 텍스트형 PII)
+
+**v1 기본** — allergy, diagnosis, prescription, surgery, disability, blood, religion, marital, gender, orientation, nationality, mental, school, degree, job_title, company, dept, course_grade
+
+**v2 보강 (P0/P1)** — `work_email`(한국 회사 도메인 사전), `hospital_doctor`(병원+진료과+교수), `transaction`(거래구분 + partner), `car_ins`(손해보험사 + 증권번호)
+
+### False Positive 방지
+
+- `gender`: "남"/"여" 단독 제거 (강남·여권 등에서 오탐 방지) — "남성"/"여성"만 매칭
+- `vin`: "VIN:" 또는 "차대번호" 컨텍스트 요구 (TRX 거래번호와 구분)
+- 컨텍스트 필요 패턴 다수: `biz_reg`, `plate`, `transaction_id`, `approval_code`, `student_id`
+
+## v4 퍼저와의 호환성
+
+[PII/fuzzer](../fuzzer/) 의 v4 출력(91+ PII types)과 직접 호환:
+
+| 퍼저 vg (validity_group) | Layer 0 탐지 커버리지 |
+|---|---|
+| checksum | rrn, biz_reg, card, driver, passport (패턴 매칭 — 체크섬 검증은 없음) |
+| format | phone, jwt, ssh, mac, ip, aws_key/secret, session, student_id, stock, flight, visa, vehicle_reg 등 대부분 커버 |
+| semantic | allergy, diagnosis, prescription, surgery, disability, blood, religion, marital, mental, school, company, dept, degree, orientation, nationality, transaction, work_email, hospital_doctor, car_ins — 키워드 사전으로 직접 매칭 |

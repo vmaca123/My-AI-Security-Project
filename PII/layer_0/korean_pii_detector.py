@@ -91,9 +91,10 @@ class KoreanPIIDetector:
             "ip": re.compile(
                 r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'
             ),
-            # VIN (Vehicle Identification Number)
+            # VIN (Vehicle Identification Number) — 컨텍스트 요구 (TRX/토큰 등과 구분)
             "vin": re.compile(
-                r'([A-HJ-NPR-Z0-9]{17})'
+                r'(?:VIN|차대번호)[: ]*([A-HJ-NPR-Z0-9]{17})',
+                re.IGNORECASE
             ),
             # Korean salary (연봉/월급 XXX만원)
             "salary": re.compile(
@@ -134,6 +135,108 @@ class KoreanPIIDetector:
             # Graduation
             "grad_year": re.compile(
                 r'(\d{4}년\s*\d{1,2}월\s*졸업)'
+            ),
+
+            # ── P0 보강 (bundle primary) ──
+            # 의료기록번호 (MRN-YYYY-NNNNNN 계열)
+            "medical_rec": re.compile(
+                r'((?:MRN|차트번호|의료기록번호|환자번호)[-_: ]?\d{2,4}[-_ ]?\d{4,6})',
+                re.IGNORECASE
+            ),
+            # 사번 (EMP-YYYY-NNNN 또는 사번-YYYY-NNNN)
+            "emp_id": re.compile(
+                r'((?:EMP|사번)[-_\s]*\d{4}[-_ ]\d{4})',
+                re.IGNORECASE
+            ),
+
+            # ── P1 보강 (자주 유출되는 구조화 토큰) ──
+            # 운전면허번호 NN-NN-NNNNNN-NN
+            "driver": re.compile(
+                r'(\d{2}-\d{2}-\d{6}-\d{2})'
+            ),
+            # 여권번호 (M/S/R/G + 8자리)
+            "passport": re.compile(
+                r'(?<![A-Z0-9])([MSRG]\d{8})(?![0-9])'
+            ),
+            # 사업자등록번호 (컨텍스트 의존 — "사업자" 키워드와 함께)
+            "biz_reg": re.compile(
+                r'(?:사업자(?:등록)?번호|biz[_-]?reg)[: ]*(\d{3}-\d{2}-\d{5})',
+                re.IGNORECASE
+            ),
+            # 차량 번호판 (34가1234 / 123가1234)
+            "plate": re.compile(
+                r'(?:차량번호|번호판|등록번호)[: ]*(\d{2,3}\s?[가-힣]\s?\d{4})'
+            ),
+            # 택배송장 번호
+            "parcel": re.compile(
+                r'((?:CJ대한통운|한진택배|로젠택배|우체국택배|쿠팡|마켓컬리|롯데택배)\s+\d{10,13})'
+            ),
+            # CCTV ID
+            "cctv": re.compile(
+                r'(CAM-(?:B\d|\d+F|주차장|로비|정문|후문)-\d{3})',
+                re.IGNORECASE
+            ),
+            # 거래번호 (transaction generator에서 나오는 TRX prefix)
+            "transaction_id": re.compile(
+                r'(?:거래번호|transaction[_-]?(?:number|id))[: =]*(TRX\d{10,})',
+                re.IGNORECASE
+            ),
+            # 승인번호 (카드승인 6자리)
+            "approval_code": re.compile(
+                r'(?:승인번호|approval[_-]?(?:number|code))[: =]*(\d{6})',
+                re.IGNORECASE
+            ),
+            # 녹취록 (voice record 컨텍스트)
+            "voice": re.compile(
+                r'(녹취록\s*\(\d{4}\.\d{1,2}\.\d{1,2}\))'
+            ),
+            # 비자 체류자격 (F-4/E-7/D-10 등 + 8자리)
+            "visa": re.compile(
+                r'([A-Z]-\d{1,2}-\d{8})'
+            ),
+            # 항공편 번호 (KE OZ 7C LJ TW BX)
+            "flight": re.compile(
+                r'((?:KE|OZ|7C|LJ|TW|BX|ZE)\d{2,4}\b)'
+            ),
+            # 차량등록
+            "vehicle_reg": re.compile(
+                r'((?:서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)\s*\d{4}-\d{4,6})'
+            ),
+            # 4대보험 문서번호
+            "insurance4": re.compile(
+                r'((?:국민연금|건강보험|고용보험|산재보험)[: ]*\d{3,4}-\d{4,6})'
+            ),
+            # 보험증권 번호 (생명보험사 + L/H/A prefix)
+            "ins_policy": re.compile(
+                r'((?:삼성생명|한화생명|교보생명|신한생명|미래에셋생명)\s+[LHA]-\d{4}-\d{6,8})'
+            ),
+            # 출입국 기록 (노선 + 출국/입국)
+            "immigration": re.compile(
+                r'((?:인천|김포|제주|부산)\s*[→↔-]\s*(?:도쿄|나리타|하네다|간사이|LA|JFK|샌프란|베이징|상하이|홍콩|방콕)\s+(?:출국|입국))'
+            ),
+            # 학번 (입학년도 4자리 + 5자리)
+            "student_id": re.compile(
+                r'(?:학번|학생번호)[: ]*(\d{4}\d{5})'
+            ),
+            # 증권계좌 (증권사 + 계좌번호)
+            "stock": re.compile(
+                r'((?:삼성|미래에셋|키움|NH투자|KB|신한)증권\s+\d{5}-\d{2}-\d{6,})'
+            ),
+            # 시험/성적 GPA (기존 gpa 확장 — "학점 4.0/4.5" 외에 "GPA 4.0")
+            # (already covered by existing gpa)
+
+            # ── 주요 숫자형 PII 백업 (Presidio/Bedrock 뚫린 경우 대비) ──
+            # 주민등록번호 — 단독 (컨텍스트 없이 YYMMDD-NNNNNNN)
+            "rrn_pattern": re.compile(
+                r'\b(\d{6}[- ]?[1-4]\d{6})\b'
+            ),
+            # 한국 휴대폰 (백업)
+            "phone_kr": re.compile(
+                r'(01[016-9][- ]?\d{3,4}[- ]?\d{4})'
+            ),
+            # 신용카드 (Luhn 검증 없이 패턴만 — Presidio 가 주로 잡지만 backup)
+            "card": re.compile(
+                r'\b((?:\d{4}[- ]?){3}\d{4})\b'
             ),
         }
 
@@ -218,8 +321,9 @@ class KoreanPIIDetector:
                 "values": ["기혼", "미혼", "이혼", "사별", "별거", "동거"],
             },
             "gender": {
+                # "남"/"여" 단독은 "강남"/"여권" 등에서 false positive 유발 — 제거
                 "context": ["성별", "젠더"],
-                "values": ["남성", "여성", "남", "여", "논바이너리", "트랜스젠더"],
+                "values": ["남성", "여성", "논바이너리", "트랜스젠더"],
             },
             "orientation": {
                 "context": ["성적지향", "성지향", "성적 지향"],
@@ -290,6 +394,44 @@ class KoreanPIIDetector:
                 "values": [],
                 "value_pattern": re.compile(
                     r'(?:[\uAC00-\uD7A3]{2,})\s+([A-F][+\-]?)(?:\s|$|,)'
+                ),
+            },
+            # ── P0 보강: 업무 이메일 (한국 회사 도메인) ──
+            "work_email": {
+                "context": ["업무메일", "회사메일", "업무 이메일", "회사 이메일", "work email"],
+                "values": [],
+                "value_pattern": re.compile(
+                    r'([\w.+-]+@(?:samsung|lg|sk|hyundai|kia|posco|hanwha|lotte|cj|naver|kakao|'
+                    r'line|coupang|baemin|toss|carrot|celltrion|kbstar|shinhan|woori|hana|nonghyup|'
+                    r'ibk|kbank|kakaobank|tossbank)\.(?:com|co\.kr|net))',
+                    re.IGNORECASE
+                ),
+            },
+            # ── P1 보강: 병원 담당의 (병원명 + 진료과 + 교수) ──
+            "hospital_doctor": {
+                "context": ["담당의", "주치의", "교수", "원장"],
+                "values": [],
+                "value_pattern": re.compile(
+                    r'((?:서울대병원|세브란스병원|삼성서울병원|아산병원|서울성모병원|'
+                    r'충남대병원|경북대병원|전남대병원|부산대병원|고려대안암병원|'
+                    r'강남세브란스|분당서울대|일산백병원)\s+[가-힣]{2,4}과?\s+[가-힣]+(?:○○)?\s*(?:교수|원장|의사))'
+                ),
+            },
+            # ── P1 보강: 거래내역 (partner + 금액) ──
+            "transaction": {
+                "context": ["거래내역", "결제내역", "승인내역", "최근거래", "거래알림"],
+                "values": [],
+                "value_pattern": re.compile(
+                    r'((?:카드승인|체크카드승인|계좌이체|자동이체|간편결제|ATM출금|입금|'
+                    r'카승|체크승인|간편승인|ATM인출)\s*\([가-힣]+\))'
+                ),
+            },
+            # ── P1 보강: 보험회사 + 증권번호 (손해보험) ──
+            "car_ins": {
+                "context": ["차량보험", "자동차보험", "자차보험"],
+                "values": [],
+                "value_pattern": re.compile(
+                    r'((?:삼성화재|현대해상|DB손해보험|KB손해보험|메리츠화재|롯데손해보험|한화손해보험)\s+(?:AUTO-)?\d{4}-\d{6,8})'
                 ),
             },
         }
@@ -399,9 +541,34 @@ def _demo():
         ("GPS", "위치 37.5170°N, 129.0520°E"),
         ("정치", "고서현 ○○당 당원번호 2022-49379"),
 
+        # ── v2 보강 (P0/P1) ──
+        ("의료기록",   "환자 기록: MRN-2024-123456 진단 제2형 당뇨병"),
+        ("사번",       "홍길동 사번 EMP-2023-4521 재직"),
+        ("업무메일",   "김철수 업무메일 cheolsu.kim@samsung.com"),
+        ("차량번호",   "차량번호 34가1234 접수"),
+        ("택배",       "CJ대한통운 6123456789012 배송 완료"),
+        ("운전면허",   "운전면허번호 11-12-123456-78"),
+        ("여권",       "여권번호 M12345678 확인 완료"),
+        ("사업자",     "사업자등록번호 123-45-67890 등록"),
+        ("거래번호",   "거래번호 TRX202604201520001234"),
+        ("승인번호",   "결제 승인번호 482193"),
+        ("녹취록",     "녹취록 (2026.03.18) 계좌번호 확인"),
+        ("비자",       "체류자격 F-4-12345678"),
+        ("항공편",     "KE123 ICN→NRT 2026-03-20"),
+        ("차량등록",   "서울 2024-123456 등록"),
+        ("4대보험",    "국민연금 1234-567890"),
+        ("보험증권",   "삼성생명 L-2024-12345678"),
+        ("출입국",     "인천→나리타 출국"),
+        ("학번",       "학번 202012345"),
+        ("증권",       "삼성증권 12345-67-890123"),
+        ("병원담당의", "서울대병원 내과 김○○ 교수"),
+        ("거래내역",   "카드승인(출금) 스타벅스 강남역점 6,800원"),
+        ("차량보험",   "현대해상 AUTO-2024-12345678"),
+
         # 정상 텍스트 (false positive 방지 확인)
         ("정상1", "오늘 날씨가 좋습니다"),
         ("정상2", "회의는 3시에 시작합니다"),
+        ("정상3", "프로젝트 마감일은 다음 주 금요일입니다"),
     ]
 
     print("=" * 70)
