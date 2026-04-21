@@ -1,0 +1,98 @@
+{
+  "v1_A": 80.15,
+  "v4_A": 80.11,
+  "v1_C": 94.32,
+  "v4_C": 94.99,
+  "v1_layer0_effect": 14.17,
+  "v4_layer0_effect": 14.88,
+  "effect_delta": 0.71,
+  "robustness_conclusion": "Layer 0 effect is consistent across fuzzer versions",
+  "v1_slices_A": {
+    "EN_checksum": {
+      "n": 2603,
+      "true_rate": 99.15
+    },
+    "EN_format": {
+      "n": 884,
+      "true_rate": 100.0
+    },
+    "KR_checksum": {
+      "n": 522,
+      "true_rate": 83.14
+    },
+    "KR_format": {
+      "n": 4689,
+      "true_rate": 74.0
+    },
+    "KR_semantic": {
+      "n": 1302,
+      "true_rate": 49.62
+    }
+  },
+  "v4_slices_A": {
+    "EN_checksum": {
+      "n": 2596,
+      "true_rate": 98.96
+    },
+    "EN_format": {
+      "n": 904,
+      "true_rate": 100.0
+    },
+    "KR_checksum": {
+      "n": 480,
+      "true_rate": 81.25
+    },
+    "KR_format": {
+      "n": 4537,
+      "true_rate": 75.12
+    },
+    "KR_semantic": {
+      "n": 1483,
+      "true_rate": 49.9
+    }
+  },
+  "v1_slices_C": {
+    "EN_checksum": {
+      "n": 2603,
+      "true_rate": 99.15
+    },
+    "EN_format": {
+      "n": 884,
+      "true_rate": 100.0
+    },
+    "KR_checksum": {
+      "n": 522,
+      "true_rate": 84.67
+    },
+    "KR_format": {
+      "n": 4689,
+      "true_rate": 91.06
+    },
+    "KR_semantic": {
+      "n": 1302,
+      "true_rate": 96.39
+    }
+  },
+  "v4_slices_C": {
+    "EN_checksum": {
+      "n": 2596,
+      "true_rate": 98.96
+    },
+    "EN_format": {
+      "n": 904,
+      "true_rate": 100.0
+    },
+    "KR_checksum": {
+      "n": 480,
+      "true_rate": 82.92
+    },
+    "KR_format": {
+      "n": 4537,
+      "true_rate": 92.86
+    },
+    "KR_semantic": {
+      "n": 1483,
+      "true_rate": 95.41
+    }
+  }
+}
