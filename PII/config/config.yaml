@@ -1,0 +1,100 @@
+model_list:
+  - model_name: gpt-4o
+    litellm_params:
+      model: gpt-4o
+      api_key: os.environ/OPENAI_API_KEY
+
+general_settings:
+  master_key: sk-1234
+  database_url: os.environ/DATABASE_URL
+
+guardrails:
+  # -- Layer 0: Korean Normalizer + PII Detector (pre_call) --
+  - guardrail_name: "korean-layer0"
+    litellm_params:
+      guardrail: korean_layer0_guardrail.KoreanLayer0Guard
+      mode: "pre_call"
+
+  # -- Layer 1: Presidio PII (pre_call) --
+  - guardrail_name: "Presidio PII"
+    litellm_params:
+      guardrail: presidio
+      mode: "pre_call"
+      guardrail_info:
+        mock_redact: false
+        presidio_ad_hoc_recognizers: null
+        presidio_analyzer_api_base: "http://presidio-analyzer:3000"
+        presidio_anonymizer_api_base: "http://presidio-anonymizer:3000"
+        output_parse_pii: true
+        presidio_language: "en"
+        filter_scope: "both"
+        run_on: "both"
+        pii_entities_config:
+          CREDIT_CARD: {"action": "MASK"}
+          US_SSN: {"action": "MASK"}
+          EMAIL_ADDRESS: {"action": "MASK"}
+          PHONE_NUMBER: {"action": "MASK"}
+          PERSON: {"action": "MASK"}
+          LOCATION: {"action": "MASK"}
+          DATE_TIME: {"action": "MASK"}
+          NRP: {"action": "MASK"}
+          MEDICAL_LICENSE: {"action": "MASK"}
+          URL: {"action": "MASK"}
+          US_DRIVER_LICENSE: {"action": "MASK"}
+          IP_ADDRESS: {"action": "MASK"}
+          US_PASSPORT: {"action": "MASK"}
+          US_BANK_NUMBER: {"action": "MASK"}
+          IBAN_CODE: {"action": "MASK"}
+          CRYPTO: {"action": "MASK"}
+          UK_NHS: {"action": "MASK"}
+          SG_NRIC_FIN: {"action": "MASK"}
+          AU_ABN: {"action": "MASK"}
+          AU_ACN: {"action": "MASK"}
+          AU_TFN: {"action": "MASK"}
+          AU_MEDICARE: {"action": "MASK"}
+          IN_PAN: {"action": "MASK"}
+          IN_AADHAAR: {"action": "MASK"}
+          IN_VEHICLE_REGISTRATION: {"action": "MASK"}
+          IN_VOTER: {"action": "MASK"}
+          IN_PASSPORT: {"action": "MASK"}
+          ES_NIF: {"action": "MASK"}
+          IT_FISCAL_CODE: {"action": "MASK"}
+          IT_DRIVER_LICENSE: {"action": "MASK"}
+          IT_VAT_CODE: {"action": "MASK"}
+          IT_PASSPORT: {"action": "MASK"}
+          IT_IDENTITY_CARD: {"action": "MASK"}
+          PL_PESEL: {"action": "MASK"}
+          FI_PERSONAL_IDENTITY_CODE: {"action": "MASK"}
+          US_ITIN: {"action": "MASK"}
+          AZURE_OPENAI_API_KEY: {"action": "MASK"}
+          AWS_ACCESS_KEY: {"action": "MASK"}
+          GCP_API_KEY: {"action": "MASK"}
+
+  # -- Layer 2: AWS Bedrock Guardrail (during_call) --
+  - guardrail_name: "Bedrock Guardrail"
+    litellm_params:
+      guardrail: bedrock
+      mode: "during_call"
+      guardrailIdentifier: "lwkm339ab127"
+      guardrailVersion: "DRAFT"
+      default_on: true
+    environment_variables:
+      AWS_ACCESS_KEY_ID: os.environ/AWS_ACCESS_KEY_ID
+      AWS_SECRET_ACCESS_KEY: os.environ/AWS_SECRET_ACCESS_KEY
+      AWS_REGION_NAME: "us-east-1"
+
+  # -- Layer 3: Lakera (pre_call) --
+  - guardrail_name: "Lakera"
+    litellm_params:
+      guardrail: lakera_v2
+      mode: "pre_call"
+      api_base: "https://api.lakera.ai"
+      project_id: "admin"
+    environment_variables:
+      LAKERA_API_KEY: os.environ/LAKERA_API_KEY
+
+  # -- Layer 4: GPT-4o PII Judge (post_call) --
+  - guardrail_name: "gpt4o-pii-judge"
+    litellm_params:
+      guardrail: custom_guardrail.GPT4oPIIJudge
+      mode: "post_call"
