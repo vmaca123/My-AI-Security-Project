@@ -5,6 +5,67 @@
 
 ---
 
+## 📅 2026-04-23 (목) — Phase 6: Framing 재정립 + 정연서 협업
+
+### 핵심 결정 사항 (대화 자동 압축 전 저장)
+
+#### 1. **프로젝트 framing 재정립** ★ 매우 중요
+- ❌ "한국어 PII 보호 엔진" — 단독 31%로 과장 표현
+- ✅ "한국어 PII **보강 계층 (Complementary Layer)**" — 정확
+- L0 단독 성능 측정 결과: Overall 30.96% / Korean 47.54% / KR_semantic 80.65% / English 0%
+- 의미: L0는 단독 사용 불가, **다계층 방어의 한국어 missing link** 역할
+- 영어 PII는 **의도적으로** 안 다룸 (Presidio가 담당)
+
+#### 2. **2-stage narrative 합의** (내일 vs 콘테스트)
+- **내일 중간발표**: "보강 계층" framing으로 정직하게
+- **콘테스트 최종**: "단독 보호 엔진"으로 성장 후 발표
+- 성장 로드맵: Phase A (체크섬, 2-3h) → B (포맷, 1d) → C (사전, 1-2d) → D (NER, 1d)
+- 목표: 단독 한국어 95%+ 보호 엔진
+
+#### 3. **Azure AI Language 통합 검토**
+- LiteLLM 공식 미지원, 하지만 **Presidio가 `AzureAILanguageRecognizer` 빌트인 제공**
+- 통합 = `analyzer.registry.add_recognizer()` 한 줄
+- LiteLLM/custom_guardrail 수정 불필요
+- presidio-analyzer 컨테이너에 `pip install "presidio-analyzer[azure-ai-language]"` 검증 완료
+- `supported_language="ko"` 파라미터 존재 확인 (한국어 호출 가능)
+- **콘테스트엔 추가 X** (시간 부족), **Discussion에만 언급**, **콘테스트 후 5번째 baseline으로 비교 예정**
+
+#### 4. **3-Tier Defense Paradigm 분류 추가**
+- Tier 1 Deterministic (regex+사전): Layer 0, Presidio
+- Tier 2 Statistical/ML NER: **(현재 비어있음, Azure AI Language 후보)**
+- Tier 3 Semantic LLM: GPT-4o-mini judge
+- 별도: Lakera (인젝션), Bedrock (LLM 안전 통합 플랫폼)
+
+#### 5. **본질 재정의**
+- 우리가 만든 건 LLM 가드레일 아닌 **한국어 PII 처리 모듈**
+- LiteLLM = 검증 환경에 불과
+- 7가지 deployment 가능: Python lib / REST API / CLI / **LLM 게이트레일★** / 데이터 파이프라인 / 로그 마스킹 / IDE 플러그인
+- 적용 도메인: LLM / 의료 EMR / 금융 콜센터 / 공공 데이터 / 폐쇄망
+
+#### 6. **퍼저 변형 검토**
+- 현재 22+ mutation 풍부 (L0~L5 6단계, 한국어 전용 21종 추가)
+- 빠진 것: Base64 / URL encoding / HTML entity / Markdown 위장 / Tag injection / Unicode RTL/LTR
+- 추가 가능 (콘테스트 후): Base64 + URL encoding 두 개만 추가해도 평가 영향 큼
+
+### 산출물
+- `PII/results/phase1/phase1_l0_standalone.json` — L0 단독 성능 측정 데이터
+- `paper/정연서_PPT_가이드.md` — 정연서한테 보낼 PPT 작성 합의 사항 정리
+- 본 CHANGELOG 항목
+
+### Verification
+- Presidio 컨테이너에 azure-ai-language SDK 설치 가능성 확인 ✅
+- `from presidio_analyzer.predefined_recognizers import AzureAILanguageRecognizer` import 성공 ✅
+- L0 단독 성능 raw data로 검증 (모든 가드레일 10,000회 호출, 에러 0) ✅
+- LiteLLM UI 'Default Off' 표시는 `/v1/chat/completions` 자동 적용 여부, `/guardrails/apply_guardrail` 명시 호출과 무관 — 우리 평가 데이터 정상 ✅
+
+### KDPII 논문 링크 검증 완료
+- DOI: https://doi.org/10.1109/ACCESS.2024.3461804 ✅
+- Zenodo dataset: https://zenodo.org/records/10968609 ✅ (CC BY 4.0)
+- 정확한 제목: "Korean Dialogic Dataset for Personal Identifiable Information De-identification"
+- 저자: KIM HANSAEM (연세대 함세메 Kim's Lab) + Li Fei + KANG YEJEE + PARK SEOYOON + YEONJI YEONJI
+
+---
+
 ## 📅 2026-04-22 (수) — Phase 5: 발표·문서 패키징
 
 | 시간 | Commit | 의미 |

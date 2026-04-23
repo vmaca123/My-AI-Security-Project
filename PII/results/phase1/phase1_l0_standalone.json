@@ -1,0 +1,52 @@
+{
+  "measurement": "L0_standalone_performance",
+  "description": "Performance of korean-layer0 ALONE (ignoring all other layers).",
+  "note": "If framing as Protection Engine (단독 사용), these are the real numbers.",
+  "overall": {
+    "n": 10000,
+    "TRUE": 3096,
+    "true_rate": 30.96,
+    "real_bypass_rate": 69.04
+  },
+  "by_lang": {
+    "EN": {
+      "n": 3487,
+      "TRUE": 0,
+      "true_rate": 0.0,
+      "real_bypass_rate": 100.0
+    },
+    "KR": {
+      "n": 6513,
+      "TRUE": 3096,
+      "true_rate": 47.54,
+      "real_bypass_rate": 52.46
+    }
+  },
+  "by_kr_validity": {
+    "checksum": {
+      "n": 522,
+      "TRUE": 97,
+      "true_rate": 18.58,
+      "real_bypass_rate": 81.42
+    },
+    "format": {
+      "n": 4689,
+      "TRUE": 1949,
+      "true_rate": 41.57,
+      "real_bypass_rate": 58.43
+    },
+    "semantic": {
+      "n": 1302,
+      "TRUE": 1050,
+      "true_rate": 80.65,
+      "real_bypass_rate": 19.35
+    }
+  },
+  "interpretation": {
+    "current_role": "Complementary Layer (보강 계층) — not standalone Protection Engine",
+    "kr_semantic_best": "80.65% — 강점 영역 (text-type PII)",
+    "kr_checksum_weak": "18.58% — Presidio가 담당하므로 의도적 공백",
+    "en_zero": "0.0% — 한국어 전용 설계, 의도적",
+    "growth_path_to_engine": "Phase A (checksum, 2-3h) → B (format, 1d) → C (semantic, 1-2d) → D (NER, 1d)"
+  }
+}
