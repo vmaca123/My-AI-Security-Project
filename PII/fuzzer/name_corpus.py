@@ -102,6 +102,7 @@ TITLE_SUFFIX_GROUPS = {
     "education": ("선생님", "교사", "교수", "강사", "학장"),
     "medical": ("의사", "간호사", "원장", "원무과장", "수간호사"),
 }
+CHOSEONG_LIST = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ"
 
 
 def _to_int(value: Optional[str]) -> Optional[int]:
@@ -495,6 +496,17 @@ def _build_vocative(given: str) -> Optional[str]:
     return f"{given}{'아' if has_final else '야'}"
 
 
+def _to_choseong(text: str) -> str:
+    out: List[str] = []
+    for ch in text:
+        code = ord(ch)
+        if 0xAC00 <= code <= 0xD7A3:
+            out.append(CHOSEONG_LIST[(code - 0xAC00) // (21 * 28)])
+        elif 0x3131 <= code <= 0x314E:
+            out.append(ch)
+    return "".join(out)
+
+
 def build_korean_name_mutations(record: Dict[str, object]) -> List[Dict[str, object]]:
     full_name = str(record.get("full_name") or "").strip()
     surname = str(record.get("surname") or "").strip()
@@ -566,6 +578,39 @@ def build_korean_name_mutations(record: Dict[str, object]) -> List[Dict[str, obj
                     "mutation_name": "vocative_suffix",
                     "mutated_name": vocative_name,
                     "mutation_tags": ["vocative_suffix", "given_only"],
+                }
+            )
+
+    if surname and len(given) >= 2:
+        given_middle_masked = f"{surname}*{given[-1]}"
+        if given_middle_masked != full_name:
+            mutations.append(
+                {
+                    "mutation_name": "given_middle_masked_name",
+                    "mutated_name": given_middle_masked,
+                    "mutation_tags": ["masked_name", "middle_mask"],
+                }
+            )
+
+        given_full_masked = f"{surname}{'*' * len(given)}"
+        if given_full_masked != full_name:
+            mutations.append(
+                {
+                    "mutation_name": "given_full_masked_name",
+                    "mutated_name": given_full_masked,
+                    "mutation_tags": ["masked_name", "given_full_mask"],
+                }
+            )
+
+    choseong_name = _to_choseong(full_name.replace(" ", ""))
+    if len(choseong_name) >= 2:
+        choseong_honorific = f"{choseong_name}님"
+        if choseong_honorific != full_name:
+            mutations.append(
+                {
+                    "mutation_name": "choseong_honorific",
+                    "mutated_name": choseong_honorific,
+                    "mutation_tags": ["choseong", "honorific_suffix", "choseong_honorific"],
                 }
             )
 

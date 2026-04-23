@@ -16,7 +16,7 @@ curl -sf http://localhost:4000/health/liveness >/dev/null || {
 
 echo "[2/9] Generate fuzzer payloads (10k+ synthetic PII)"
 cd "$ROOT/PII/fuzzer"
-python korean_pii_fuzzer_v4.py --count 3 --output "$EVAL/fuzzer_out_v4.json"
+python korean_pii_fuzzer_v4.py --count 3 --output "$EVAL/payloads_full.json"
 
 echo "[3/9] Stratified 10k sampling"
 cd "$EVAL" && python sample_10k.py

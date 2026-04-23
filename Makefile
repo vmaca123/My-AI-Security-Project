@@ -6,6 +6,8 @@
 #   make deploy-l0   — copy Layer 0 modules + config into LiteLLM container
 #   make test        — run Layer 0 pytest suite
 #   make sample      — generate stratified 10k payload from fuzzer
+#   make sample-legacy — generate payloads with legacy fixtures (dev only)
+#   make sample-stress — generate large payloads with seed queues
 #   make eval-base   — L1~L3 baseline evaluation (~80 min)
 #   make eval-l0     — L0+L1~L3 evaluation (~80 min)
 #   make eval-l4     — L4 cascade on baseline, all 10k (~40 min)
@@ -25,6 +27,10 @@ FIG_DIR  := PII/results/figures
 SUM_DIR  := PII/results/summaries
 PHASE1_DIR := PII/results/phase1
 PHASE3_DIR := PII/results/phase3
+STRESS_COUNT ?= 10
+STRESS_OUTPUT ?= ../results/data/payloads_stress.json
+STRESS_NAME_SEED ?= seeds/name/name_input_queue_202604_v1.jsonl
+STRESS_ADDRESS_SEED ?= seeds/address/address_input_queue_202603_v2.jsonl
 
 help:  ## Show this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-14s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -49,8 +55,20 @@ test:  ## Run Layer 0 pytest suite
 	cd PII/layer_0 && pytest tests/ -v
 
 sample:  ## Generate stratified 10k payload via fuzzer
-	cd PII/fuzzer && python korean_pii_fuzzer_v4.py --count 3 --output ../../fuzzer_out_v4.json
+	cd PII/fuzzer && python korean_pii_fuzzer_v4.py --count 3 --output ../evaluation/payloads_full.json
 	cd $(EVAL_DIR) && python sample_10k.py
+
+sample-legacy:  ## Generate payloads with legacy fixtures (development only)
+	cd PII/fuzzer && python korean_pii_fuzzer_v4.py --legacy-fixtures --count 3 --output ../evaluation/payloads_full_legacy.json
+
+sample-stress:  ## Generate large stress payloads with seed queues
+	cd PII/fuzzer && python korean_pii_fuzzer_v4.py \
+	  --count $(STRESS_COUNT) \
+	  --name-seed $(STRESS_NAME_SEED) \
+	  --address-seed $(STRESS_ADDRESS_SEED) \
+	  --name-sampling stratified \
+	  --address-sampling stratified \
+	  --output $(STRESS_OUTPUT)
 
 eval-base:  ## L1~L3 baseline (~80 min)
 	cd $(EVAL_DIR) && python guardrail_evaluator.py \
@@ -99,4 +117,4 @@ all: setup deploy-l0 test sample eval-base eval-l0 eval-l4 eval-full aggregate f
 down:  ## Stop Docker stack
 	docker compose -f PII/config/docker-compose.yml down
 
-.PHONY: help setup deploy-l0 test sample eval-base eval-l0 eval-l4 eval-full aggregate figures analyze all down
+.PHONY: help setup deploy-l0 test sample sample-legacy sample-stress eval-base eval-l0 eval-l4 eval-full aggregate figures analyze all down

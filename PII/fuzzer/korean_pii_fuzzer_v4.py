@@ -18,9 +18,10 @@ Usage:
   python korean_pii_fuzzer_v4.py --count 30 --output payloads_v4.json
 """
 
-import json, random, argparse, base64, hashlib, string
+import os, json, random, argparse, base64, hashlib, string
 from datetime import datetime
 from collections import defaultdict
+from pathlib import Path
 
 from name_corpus import build_korean_name_mutations, load_name_seed_records, load_tagged_name_records
 from address_corpus import (
@@ -59,6 +60,16 @@ from prescription_corpus import (
     resolve_prescription_record,
 )
 from prescription_mutations import build_prescription_korean_mutations
+
+
+DEFAULT_NAME_CORPUS_PATH = (Path(__file__).resolve().parent / "data" / "tagged_korean_names.jsonl").resolve()
+DEFAULT_ADDRESS_CORPUS_PATH = (Path(__file__).resolve().parent / "data" / "tagged_korean_addresses.jsonl").resolve()
+_LEGACY_FALLBACK_TRUE_VALUES = {"1", "true", "yes", "y", "on"}
+
+
+def is_legacy_fallback_enabled():
+    value = os.getenv("PII_ALLOW_LEGACY_FALLBACK", "")
+    return value.strip().lower() in _LEGACY_FALLBACK_TRUE_VALUES
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -690,21 +701,27 @@ class FuzzerV4:
         address_corpus_path=None,
         address_seed_path=None,
         address_sampling="random",
+        allow_legacy_fallback=False,
     ):
-        self.name_corpus_source = name_corpus_path or "legacy_embedded"
+        self.allow_legacy_fallback = bool(allow_legacy_fallback)
+        self.corpus_policy = "legacy_fixtures" if self.allow_legacy_fallback else "required"
+        self.name_corpus_path = str((Path(name_corpus_path).expanduser() if name_corpus_path else DEFAULT_NAME_CORPUS_PATH).resolve())
+        self.address_corpus_path = str((Path(address_corpus_path).expanduser() if address_corpus_path else DEFAULT_ADDRESS_CORPUS_PATH).resolve())
+
+        self.name_corpus_source = self.name_corpus_path
         self.name_seed_source = name_seed_path or ""
         self.name_sampling = name_sampling
-        self.name_records = self._load_name_records(name_corpus_path)
+        self.name_records = self._load_name_records(self.name_corpus_path)
         self.name_seed_records = self._load_name_seed_records(name_seed_path)
         if self.name_seed_records:
             self.names = [str(rec.get("text", "")).strip() for rec in self.name_seed_records if str(rec.get("text", "")).strip()]
         else:
             self.names = [rec["full_name"] for rec in self.name_records]
-        self.address_corpus_source = address_corpus_path or "legacy_generator"
+        self.address_corpus_source = self.address_corpus_path
         self.address_seed_source = address_seed_path or ""
         self.address_sampling = address_sampling
         self.address_seed_records = self._load_address_seed_records(address_seed_path)
-        self.address_records = self._load_address_records(address_corpus_path)
+        self.address_records = self._load_address_records(self.address_corpus_path)
 
         self.payloads = []
         self.n = 0
@@ -725,20 +742,7 @@ class FuzzerV4:
         self._address_tier_order = sorted(self._address_buckets.keys())
         self._address_tier_cursor = 0
 
-    def _load_name_records(self, name_corpus_path):
-        if name_corpus_path:
-            try:
-                records = load_tagged_name_records(name_corpus_path)
-                if records:
-                    return records
-                self.name_corpus_source = "legacy_embedded"
-            except FileNotFoundError:
-                print(f"[WARN] name corpus not found: {name_corpus_path}. falling back to embedded names.")
-                self.name_corpus_source = "legacy_embedded"
-            except json.JSONDecodeError:
-                print(f"[WARN] name corpus parse failed: {name_corpus_path}. falling back to embedded names.")
-                self.name_corpus_source = "legacy_embedded"
-
+    def _build_legacy_name_records(self):
         records = []
         for idx, name in enumerate(get_all_kr_names(), start=1):
             tier = get_tier(name)
@@ -752,6 +756,27 @@ class FuzzerV4:
                     "name_tags": [f"legacy_{tier}"],
                 }
             )
+        return records
+
+    def _handle_name_corpus_failure(self, reason):
+        if self.allow_legacy_fallback:
+            print(f"[WARN] {reason}. using embedded legacy names (--legacy-fixtures enabled).")
+            self.name_corpus_source = "legacy_embedded"
+            return self._build_legacy_name_records()
+        raise RuntimeError(
+            f"{reason}. name corpus is required for evaluation. "
+            f"use --legacy-fixtures (or PII_ALLOW_LEGACY_FALLBACK=1) only for development."
+        )
+
+    def _load_name_records(self, name_corpus_path):
+        try:
+            records = load_tagged_name_records(name_corpus_path)
+        except FileNotFoundError:
+            return self._handle_name_corpus_failure(f"name corpus not found: {name_corpus_path}")
+        except json.JSONDecodeError:
+            return self._handle_name_corpus_failure(f"name corpus parse failed: {name_corpus_path}")
+        if not records:
+            return self._handle_name_corpus_failure(f"name corpus empty: {name_corpus_path}")
         return records
 
     def _pick_name_record(self):
@@ -785,20 +810,26 @@ class FuzzerV4:
             return None
         return _rchoice(self.name_seed_records)
 
+    def _handle_address_corpus_failure(self, reason):
+        if self.allow_legacy_fallback:
+            print(f"[WARN] {reason}. using legacy address generator (--legacy-fixtures enabled).")
+            self.address_corpus_source = "legacy_generator"
+            return []
+        raise RuntimeError(
+            f"{reason}. address corpus is required for evaluation. "
+            f"use --legacy-fixtures (or PII_ALLOW_LEGACY_FALLBACK=1) only for development."
+        )
+
     def _load_address_records(self, address_corpus_path):
-        if address_corpus_path:
-            try:
-                records = load_tagged_address_records(address_corpus_path)
-                if records:
-                    return records
-                self.address_corpus_source = "legacy_generator"
-            except FileNotFoundError:
-                print(f"[WARN] address corpus not found: {address_corpus_path}. falling back to built-in generator.")
-                self.address_corpus_source = "legacy_generator"
-            except json.JSONDecodeError:
-                print(f"[WARN] address corpus parse failed: {address_corpus_path}. falling back to built-in generator.")
-                self.address_corpus_source = "legacy_generator"
-        return []
+        try:
+            records = load_tagged_address_records(address_corpus_path)
+        except FileNotFoundError:
+            return self._handle_address_corpus_failure(f"address corpus not found: {address_corpus_path}")
+        except json.JSONDecodeError:
+            return self._handle_address_corpus_failure(f"address corpus parse failed: {address_corpus_path}")
+        if not records:
+            return self._handle_address_corpus_failure(f"address corpus empty: {address_corpus_path}")
+        return records
 
     def _load_address_seed_records(self, address_seed_path):
         if address_seed_path:
@@ -1490,16 +1521,20 @@ class FuzzerV4:
             "metadata": {
                 "generator": "Korean PII Guardrail Fuzzer v4.0 (Validity-First)",
                 "timestamp": datetime.now().isoformat(),
+                "corpus_policy": self.corpus_policy,
+                "legacy_fixtures": self.allow_legacy_fallback,
                 "total": len(self.payloads),
                 "dropped_invalid": self.dropped_invalid,
                 "dropped_duplicate": self.dropped_duplicate,
                 "pii_types": len(PII_TYPES),
                 "name_corpus": len(self.names),
+                "name_corpus_path": self.name_corpus_path,
                 "name_corpus_source": self.name_corpus_source,
                 "name_seed": len(self.name_seed_records),
                 "name_seed_source": self.name_seed_source,
                 "name_sampling": self.name_sampling,
                 "address_corpus": len(self.address_records),
+                "address_corpus_path": self.address_corpus_path,
                 "address_corpus_source": self.address_corpus_source,
                 "address_seed": len(self.address_seed_records),
                 "address_seed_source": self.address_seed_source,
@@ -1576,21 +1611,32 @@ def main():
         default="random",
         help="Address sampling strategy when address corpus is loaded",
     )
+    parser.add_argument(
+        "--legacy-fixtures",
+        action="store_true",
+        help="Allow legacy embedded fixtures when corpus load fails (development only)",
+    )
     args = parser.parse_args()
 
-    fz = FuzzerV4(
-        name_corpus_path=args.name_corpus,
-        name_seed_path=args.name_seed,
-        name_sampling=args.name_sampling,
-        address_corpus_path=args.address_corpus,
-        address_seed_path=args.address_seed,
-        address_sampling=args.address_sampling,
-    )
+    allow_legacy_fallback = args.legacy_fixtures or is_legacy_fallback_enabled()
+    try:
+        fz = FuzzerV4(
+            name_corpus_path=args.name_corpus,
+            name_seed_path=args.name_seed,
+            name_sampling=args.name_sampling,
+            address_corpus_path=args.address_corpus,
+            address_seed_path=args.address_seed,
+            address_sampling=args.address_sampling,
+            allow_legacy_fallback=allow_legacy_fallback,
+        )
+    except RuntimeError as exc:
+        parser.error(str(exc))
     payloads = fz.generate_all(count=args.count)
     st = fz.stats()
 
     print(f"\n{'='*70}")
     print(f"  Korean PII Guardrail Fuzzer v4.0 (Validity-First)")
+    print(f"  Corpus policy: {fz.corpus_policy}")
     print(f"  Names: {len(fz.names)} | PII Types: {len(PII_TYPES)} | Categories: {len(set(p['cat'] for p in PII_TYPES))}")
     print(f"  Name corpus source: {fz.name_corpus_source} | Sampling: {fz.name_sampling}")
     print(f"  Name seed source: {fz.name_seed_source or 'none'} | Seeds: {len(fz.name_seed_records):,}")
