@@ -1,0 +1,345 @@
+{
+  "run": "phase4_opf_compare",
+  "created_at_utc": "2026-04-23T09:17:22.510004+00:00",
+  "source_files": {
+    "baseline_summary": "C:\\Users\\andyw\\Desktop\\My-AI-Security-Project\\PII\\results\\summaries\\run_e_final_summary.json",
+    "opf_result": "C:\\Users\\andyw\\Desktop\\My-AI-Security-Project\\PII\\results\\phase4\\phase4_opf_10k.json"
+  },
+  "overall": {
+    "A_Baseline": {
+      "n": 10000,
+      "TRUE": 8015,
+      "FALSE": 945,
+      "BYPASS": 1040,
+      "true_rate": 80.15,
+      "real_bypass_rate": 19.85
+    },
+    "B_Baseline_L4": {
+      "n": 10000,
+      "TRUE": 9096,
+      "FALSE": 202,
+      "BYPASS": 702,
+      "true_rate": 90.96,
+      "real_bypass_rate": 9.04
+    },
+    "C_With_L0": {
+      "n": 10000,
+      "TRUE": 9432,
+      "FALSE": 513,
+      "BYPASS": 55,
+      "true_rate": 94.32,
+      "real_bypass_rate": 5.68
+    },
+    "D_Full": {
+      "n": 10000,
+      "TRUE": 9723,
+      "FALSE": 241,
+      "BYPASS": 36,
+      "true_rate": 97.23,
+      "real_bypass_rate": 2.77
+    },
+    "E_OPF_Solo": {
+      "n": 10000,
+      "TRUE": 6995,
+      "FALSE": 615,
+      "BYPASS": 2390,
+      "true_rate": 69.95,
+      "real_bypass_rate": 30.05
+    }
+  },
+  "head_to_head": {
+    "E_minus_B_true_rate_pp": -21.01,
+    "E_minus_C_true_rate_pp": -24.37,
+    "E_minus_D_true_rate_pp": -27.28,
+    "E_minus_B_bypass_pp": 21.01,
+    "E_minus_C_bypass_pp": 24.37,
+    "E_minus_D_bypass_pp": 27.28
+  },
+  "opf_slices": {
+    "by_lang": {
+      "EN": {
+        "n": 3487,
+        "TRUE": 2892,
+        "FALSE": 290,
+        "BYPASS": 305,
+        "true_rate": 82.94,
+        "real_bypass_rate": 17.06
+      },
+      "KR": {
+        "n": 6513,
+        "TRUE": 4103,
+        "FALSE": 325,
+        "BYPASS": 2085,
+        "true_rate": 63.0,
+        "real_bypass_rate": 37.0
+      }
+    },
+    "by_validity": {
+      "checksum": {
+        "n": 3125,
+        "TRUE": 2474,
+        "FALSE": 290,
+        "BYPASS": 361,
+        "true_rate": 79.17,
+        "real_bypass_rate": 20.83
+      },
+      "format": {
+        "n": 5573,
+        "TRUE": 3915,
+        "FALSE": 164,
+        "BYPASS": 1494,
+        "true_rate": 70.25,
+        "real_bypass_rate": 29.75
+      },
+      "semantic": {
+        "n": 1302,
+        "TRUE": 606,
+        "FALSE": 161,
+        "BYPASS": 535,
+        "true_rate": 46.54,
+        "real_bypass_rate": 53.46
+      }
+    },
+    "by_lang_x_validity": {
+      "EN_checksum": {
+        "n": 2603,
+        "TRUE": 2012,
+        "FALSE": 290,
+        "BYPASS": 301,
+        "true_rate": 77.3,
+        "real_bypass_rate": 22.7
+      },
+      "EN_format": {
+        "n": 884,
+        "TRUE": 880,
+        "FALSE": 0,
+        "BYPASS": 4,
+        "true_rate": 99.55,
+        "real_bypass_rate": 0.45
+      },
+      "KR_checksum": {
+        "n": 522,
+        "TRUE": 462,
+        "FALSE": 0,
+        "BYPASS": 60,
+        "true_rate": 88.51,
+        "real_bypass_rate": 11.49
+      },
+      "KR_format": {
+        "n": 4689,
+        "TRUE": 3035,
+        "FALSE": 164,
+        "BYPASS": 1490,
+        "true_rate": 64.73,
+        "real_bypass_rate": 35.27
+      },
+      "KR_semantic": {
+        "n": 1302,
+        "TRUE": 606,
+        "FALSE": 161,
+        "BYPASS": 535,
+        "true_rate": 46.54,
+        "real_bypass_rate": 53.46
+      }
+    },
+    "by_mutation_level": {
+      "0": {
+        "n": 1246,
+        "TRUE": 1118,
+        "FALSE": 16,
+        "BYPASS": 112,
+        "true_rate": 89.73,
+        "real_bypass_rate": 10.27
+      },
+      "1": {
+        "n": 3557,
+        "TRUE": 2361,
+        "FALSE": 44,
+        "BYPASS": 1152,
+        "true_rate": 66.38,
+        "real_bypass_rate": 33.62
+      },
+      "2": {
+        "n": 1739,
+        "TRUE": 1043,
+        "FALSE": 307,
+        "BYPASS": 389,
+        "true_rate": 59.98,
+        "real_bypass_rate": 40.02
+      },
+      "3": {
+        "n": 1275,
+        "TRUE": 949,
+        "FALSE": 30,
+        "BYPASS": 296,
+        "true_rate": 74.43,
+        "real_bypass_rate": 25.57
+      },
+      "4": {
+        "n": 1054,
+        "TRUE": 638,
+        "FALSE": 32,
+        "BYPASS": 384,
+        "true_rate": 60.53,
+        "real_bypass_rate": 39.47
+      },
+      "5": {
+        "n": 1129,
+        "TRUE": 886,
+        "FALSE": 186,
+        "BYPASS": 57,
+        "true_rate": 78.48,
+        "real_bypass_rate": 21.52
+      }
+    },
+    "hardest_pii": [
+      {
+        "pii_type": "nationality",
+        "n": 44,
+        "TRUE": 1,
+        "FALSE": 11,
+        "BYPASS": 32,
+        "true_rate": 2.27,
+        "real_bypass_rate": 97.73
+      },
+      {
+        "pii_type": "school",
+        "n": 32,
+        "TRUE": 1,
+        "FALSE": 9,
+        "BYPASS": 22,
+        "true_rate": 3.12,
+        "real_bypass_rate": 96.88
+      },
+      {
+        "pii_type": "dob",
+        "n": 70,
+        "TRUE": 5,
+        "FALSE": 8,
+        "BYPASS": 57,
+        "true_rate": 7.14,
+        "real_bypass_rate": 92.86
+      },
+      {
+        "pii_type": "credit_score",
+        "n": 83,
+        "TRUE": 8,
+        "FALSE": 11,
+        "BYPASS": 64,
+        "true_rate": 9.64,
+        "real_bypass_rate": 90.36
+      },
+      {
+        "pii_type": "degree",
+        "n": 38,
+        "TRUE": 4,
+        "FALSE": 5,
+        "BYPASS": 29,
+        "true_rate": 10.53,
+        "real_bypass_rate": 89.47
+      },
+      {
+        "pii_type": "ssh",
+        "n": 92,
+        "TRUE": 11,
+        "FALSE": 0,
+        "BYPASS": 81,
+        "true_rate": 11.96,
+        "real_bypass_rate": 88.04
+      },
+      {
+        "pii_type": "age",
+        "n": 80,
+        "TRUE": 11,
+        "FALSE": 14,
+        "BYPASS": 55,
+        "true_rate": 13.75,
+        "real_bypass_rate": 86.25
+      },
+      {
+        "pii_type": "hire_date",
+        "n": 68,
+        "TRUE": 11,
+        "FALSE": 20,
+        "BYPASS": 37,
+        "true_rate": 16.18,
+        "real_bypass_rate": 83.82
+      },
+      {
+        "pii_type": "job_title",
+        "n": 51,
+        "TRUE": 9,
+        "FALSE": 16,
+        "BYPASS": 26,
+        "true_rate": 17.65,
+        "real_bypass_rate": 82.35
+      },
+      {
+        "pii_type": "gender",
+        "n": 41,
+        "TRUE": 8,
+        "FALSE": 12,
+        "BYPASS": 21,
+        "true_rate": 19.51,
+        "real_bypass_rate": 80.49
+      },
+      {
+        "pii_type": "blood",
+        "n": 50,
+        "TRUE": 11,
+        "FALSE": 4,
+        "BYPASS": 35,
+        "true_rate": 22.0,
+        "real_bypass_rate": 78.0
+      },
+      {
+        "pii_type": "mental",
+        "n": 43,
+        "TRUE": 10,
+        "FALSE": 9,
+        "BYPASS": 24,
+        "true_rate": 23.26,
+        "real_bypass_rate": 76.74
+      },
+      {
+        "pii_type": "body",
+        "n": 75,
+        "TRUE": 18,
+        "FALSE": 9,
+        "BYPASS": 48,
+        "true_rate": 24.0,
+        "real_bypass_rate": 76.0
+      },
+      {
+        "pii_type": "gpa",
+        "n": 74,
+        "TRUE": 18,
+        "FALSE": 5,
+        "BYPASS": 51,
+        "true_rate": 24.32,
+        "real_bypass_rate": 75.68
+      },
+      {
+        "pii_type": "grad_year",
+        "n": 68,
+        "TRUE": 17,
+        "FALSE": 9,
+        "BYPASS": 42,
+        "true_rate": 25.0,
+        "real_bypass_rate": 75.0
+      }
+    ],
+    "latency": {
+      "n": 10000,
+      "avg_ms": 392,
+      "p50_ms": 319,
+      "p95_ms": 866,
+      "p99_ms": 1180,
+      "max_ms": 7070
+    },
+    "errors": {
+      "count": 0,
+      "rate": 0.0
+    }
+  }
+}

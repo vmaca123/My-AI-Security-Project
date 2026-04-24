@@ -1,0 +1,1904 @@
+{
+  "source_file": "C:\\Users\\andyw\\Desktop\\My-AI-Security-Project\\PII\\results\\phase4\\phase4_opf_10k.json",
+  "overview": {
+    "kr_total": 6513,
+    "kr_miss": 2410,
+    "kr_miss_rate": 37.0,
+    "miss_classes": {
+      "TRUE": 0,
+      "FALSE": 325,
+      "BYPASS": 2085
+    },
+    "unique_kr_types": 91
+  },
+  "by_validity": {
+    "checksum": {
+      "n": 60,
+      "TRUE": 0,
+      "FALSE": 0,
+      "BYPASS": 60,
+      "miss_rate": 100.0
+    },
+    "format": {
+      "n": 1654,
+      "TRUE": 0,
+      "FALSE": 164,
+      "BYPASS": 1490,
+      "miss_rate": 100.0
+    },
+    "semantic": {
+      "n": 696,
+      "TRUE": 0,
+      "FALSE": 161,
+      "BYPASS": 535,
+      "miss_rate": 100.0
+    }
+  },
+  "by_mutation_level": {
+    "0": {
+      "n": 118,
+      "TRUE": 0,
+      "FALSE": 13,
+      "BYPASS": 105,
+      "miss_rate": 100.0
+    },
+    "1": {
+      "n": 971,
+      "TRUE": 0,
+      "FALSE": 44,
+      "BYPASS": 927,
+      "miss_rate": 100.0
+    },
+    "2": {
+      "n": 342,
+      "TRUE": 0,
+      "FALSE": 26,
+      "BYPASS": 316,
+      "miss_rate": 100.0
+    },
+    "3": {
+      "n": 320,
+      "TRUE": 0,
+      "FALSE": 24,
+      "BYPASS": 296,
+      "miss_rate": 100.0
+    },
+    "4": {
+      "n": 416,
+      "TRUE": 0,
+      "FALSE": 32,
+      "BYPASS": 384,
+      "miss_rate": 100.0
+    },
+    "5": {
+      "n": 243,
+      "TRUE": 0,
+      "FALSE": 186,
+      "BYPASS": 57,
+      "miss_rate": 100.0
+    }
+  },
+  "top_mutations": {
+    "overall": [
+      {
+        "mutation_name": "space_digits",
+        "count": 242
+      },
+      {
+        "mutation_name": "homoglyph",
+        "count": 199
+      },
+      {
+        "mutation_name": "jamo",
+        "count": 159
+      },
+      {
+        "mutation_name": "abbreviation",
+        "count": 158
+      },
+      {
+        "mutation_name": "choseong",
+        "count": 139
+      },
+      {
+        "mutation_name": "code_switch",
+        "count": 130
+      },
+      {
+        "mutation_name": "kr_digits",
+        "count": 127
+      },
+      {
+        "mutation_name": "zwsp",
+        "count": 122
+      },
+      {
+        "mutation_name": "emoji_name",
+        "count": 121
+      },
+      {
+        "mutation_name": "circled",
+        "count": 120
+      },
+      {
+        "mutation_name": "original",
+        "count": 118
+      },
+      {
+        "mutation_name": "fullwidth",
+        "count": 117
+      },
+      {
+        "mutation_name": "combining",
+        "count": 112
+      },
+      {
+        "mutation_name": "ctx_json",
+        "count": 112
+      },
+      {
+        "mutation_name": "hanja",
+        "count": 109
+      },
+      {
+        "mutation_name": "soft_hyphen",
+        "count": 104
+      },
+      {
+        "mutation_name": "ctx_rag",
+        "count": 67
+      },
+      {
+        "mutation_name": "houyi",
+        "count": 64
+      },
+      {
+        "mutation_name": "sep_space",
+        "count": 22
+      },
+      {
+        "mutation_name": "sep_slash",
+        "count": 22
+      },
+      {
+        "mutation_name": "sep_dot",
+        "count": 18
+      },
+      {
+        "mutation_name": "sep_none",
+        "count": 16
+      },
+      {
+        "mutation_name": "emoji",
+        "count": 4
+      },
+      {
+        "mutation_name": "zwsp_name",
+        "count": 4
+      },
+      {
+        "mutation_name": "romanize",
+        "count": 3
+      },
+      {
+        "mutation_name": "ml_ja",
+        "count": 1
+      }
+    ],
+    "false_only": [
+      {
+        "mutation_name": "ctx_json",
+        "count": 112
+      },
+      {
+        "mutation_name": "ctx_rag",
+        "count": 67
+      },
+      {
+        "mutation_name": "space_digits",
+        "count": 23
+      },
+      {
+        "mutation_name": "abbreviation",
+        "count": 17
+      },
+      {
+        "mutation_name": "emoji_name",
+        "count": 16
+      },
+      {
+        "mutation_name": "code_switch",
+        "count": 15
+      },
+      {
+        "mutation_name": "original",
+        "count": 13
+      },
+      {
+        "mutation_name": "hanja",
+        "count": 10
+      },
+      {
+        "mutation_name": "combining",
+        "count": 10
+      },
+      {
+        "mutation_name": "choseong",
+        "count": 10
+      },
+      {
+        "mutation_name": "zwsp",
+        "count": 9
+      },
+      {
+        "mutation_name": "jamo",
+        "count": 8
+      },
+      {
+        "mutation_name": "houyi",
+        "count": 7
+      },
+      {
+        "mutation_name": "soft_hyphen",
+        "count": 7
+      },
+      {
+        "mutation_name": "sep_space",
+        "count": 1
+      }
+    ],
+    "bypass_only": [
+      {
+        "mutation_name": "space_digits",
+        "count": 219
+      },
+      {
+        "mutation_name": "homoglyph",
+        "count": 199
+      },
+      {
+        "mutation_name": "jamo",
+        "count": 151
+      },
+      {
+        "mutation_name": "abbreviation",
+        "count": 141
+      },
+      {
+        "mutation_name": "choseong",
+        "count": 129
+      },
+      {
+        "mutation_name": "kr_digits",
+        "count": 127
+      },
+      {
+        "mutation_name": "circled",
+        "count": 120
+      },
+      {
+        "mutation_name": "fullwidth",
+        "count": 117
+      },
+      {
+        "mutation_name": "code_switch",
+        "count": 115
+      },
+      {
+        "mutation_name": "zwsp",
+        "count": 113
+      },
+      {
+        "mutation_name": "emoji_name",
+        "count": 105
+      },
+      {
+        "mutation_name": "original",
+        "count": 105
+      },
+      {
+        "mutation_name": "combining",
+        "count": 102
+      },
+      {
+        "mutation_name": "hanja",
+        "count": 99
+      },
+      {
+        "mutation_name": "soft_hyphen",
+        "count": 97
+      },
+      {
+        "mutation_name": "houyi",
+        "count": 57
+      },
+      {
+        "mutation_name": "sep_slash",
+        "count": 22
+      },
+      {
+        "mutation_name": "sep_space",
+        "count": 21
+      },
+      {
+        "mutation_name": "sep_dot",
+        "count": 18
+      },
+      {
+        "mutation_name": "sep_none",
+        "count": 16
+      },
+      {
+        "mutation_name": "emoji",
+        "count": 4
+      },
+      {
+        "mutation_name": "zwsp_name",
+        "count": 4
+      },
+      {
+        "mutation_name": "romanize",
+        "count": 3
+      },
+      {
+        "mutation_name": "ml_ja",
+        "count": 1
+      }
+    ]
+  },
+  "false_label_counts": {
+    "private_person": 297,
+    "private_phone": 182,
+    "private_address": 56,
+    "secret": 1
+  },
+  "top_types_by_miss_count": [
+    {
+      "pii_type": "nationality",
+      "n": 44,
+      "TRUE": 1,
+      "FALSE": 11,
+      "BYPASS": 32,
+      "miss": 43,
+      "true_rate": 2.27,
+      "miss_rate": 97.73
+    },
+    {
+      "pii_type": "school",
+      "n": 32,
+      "TRUE": 1,
+      "FALSE": 9,
+      "BYPASS": 22,
+      "miss": 31,
+      "true_rate": 3.12,
+      "miss_rate": 96.88
+    },
+    {
+      "pii_type": "dob",
+      "n": 70,
+      "TRUE": 5,
+      "FALSE": 8,
+      "BYPASS": 57,
+      "miss": 65,
+      "true_rate": 7.14,
+      "miss_rate": 92.86
+    },
+    {
+      "pii_type": "credit_score",
+      "n": 83,
+      "TRUE": 8,
+      "FALSE": 11,
+      "BYPASS": 64,
+      "miss": 75,
+      "true_rate": 9.64,
+      "miss_rate": 90.36
+    },
+    {
+      "pii_type": "degree",
+      "n": 38,
+      "TRUE": 4,
+      "FALSE": 5,
+      "BYPASS": 29,
+      "miss": 34,
+      "true_rate": 10.53,
+      "miss_rate": 89.47
+    },
+    {
+      "pii_type": "ssh",
+      "n": 92,
+      "TRUE": 11,
+      "FALSE": 0,
+      "BYPASS": 81,
+      "miss": 81,
+      "true_rate": 11.96,
+      "miss_rate": 88.04
+    },
+    {
+      "pii_type": "age",
+      "n": 80,
+      "TRUE": 11,
+      "FALSE": 14,
+      "BYPASS": 55,
+      "miss": 69,
+      "true_rate": 13.75,
+      "miss_rate": 86.25
+    },
+    {
+      "pii_type": "hire_date",
+      "n": 68,
+      "TRUE": 11,
+      "FALSE": 20,
+      "BYPASS": 37,
+      "miss": 57,
+      "true_rate": 16.18,
+      "miss_rate": 83.82
+    },
+    {
+      "pii_type": "job_title",
+      "n": 51,
+      "TRUE": 9,
+      "FALSE": 16,
+      "BYPASS": 26,
+      "miss": 42,
+      "true_rate": 17.65,
+      "miss_rate": 82.35
+    },
+    {
+      "pii_type": "gender",
+      "n": 41,
+      "TRUE": 8,
+      "FALSE": 12,
+      "BYPASS": 21,
+      "miss": 33,
+      "true_rate": 19.51,
+      "miss_rate": 80.49
+    },
+    {
+      "pii_type": "blood",
+      "n": 50,
+      "TRUE": 11,
+      "FALSE": 4,
+      "BYPASS": 35,
+      "miss": 39,
+      "true_rate": 22.0,
+      "miss_rate": 78.0
+    },
+    {
+      "pii_type": "mental",
+      "n": 43,
+      "TRUE": 10,
+      "FALSE": 9,
+      "BYPASS": 24,
+      "miss": 33,
+      "true_rate": 23.26,
+      "miss_rate": 76.74
+    },
+    {
+      "pii_type": "body",
+      "n": 75,
+      "TRUE": 18,
+      "FALSE": 9,
+      "BYPASS": 48,
+      "miss": 57,
+      "true_rate": 24.0,
+      "miss_rate": 76.0
+    },
+    {
+      "pii_type": "gpa",
+      "n": 74,
+      "TRUE": 18,
+      "FALSE": 5,
+      "BYPASS": 51,
+      "miss": 56,
+      "true_rate": 24.32,
+      "miss_rate": 75.68
+    },
+    {
+      "pii_type": "grad_year",
+      "n": 68,
+      "TRUE": 17,
+      "FALSE": 9,
+      "BYPASS": 42,
+      "miss": 51,
+      "true_rate": 25.0,
+      "miss_rate": 75.0
+    },
+    {
+      "pii_type": "allergy",
+      "n": 39,
+      "TRUE": 10,
+      "FALSE": 4,
+      "BYPASS": 25,
+      "miss": 29,
+      "true_rate": 25.64,
+      "miss_rate": 74.36
+    },
+    {
+      "pii_type": "orientation",
+      "n": 47,
+      "TRUE": 13,
+      "FALSE": 15,
+      "BYPASS": 19,
+      "miss": 34,
+      "true_rate": 27.66,
+      "miss_rate": 72.34
+    },
+    {
+      "pii_type": "cvv",
+      "n": 68,
+      "TRUE": 19,
+      "FALSE": 30,
+      "BYPASS": 19,
+      "miss": 49,
+      "true_rate": 27.94,
+      "miss_rate": 72.06
+    },
+    {
+      "pii_type": "face_id",
+      "n": 87,
+      "TRUE": 26,
+      "FALSE": 1,
+      "BYPASS": 60,
+      "miss": 61,
+      "true_rate": 29.89,
+      "miss_rate": 70.11
+    },
+    {
+      "pii_type": "company",
+      "n": 42,
+      "TRUE": 13,
+      "FALSE": 6,
+      "BYPASS": 23,
+      "miss": 29,
+      "true_rate": 30.95,
+      "miss_rate": 69.05
+    },
+    {
+      "pii_type": "course_grade",
+      "n": 42,
+      "TRUE": 13,
+      "FALSE": 9,
+      "BYPASS": 20,
+      "miss": 29,
+      "true_rate": 30.95,
+      "miss_rate": 69.05
+    },
+    {
+      "pii_type": "salary",
+      "n": 64,
+      "TRUE": 22,
+      "FALSE": 6,
+      "BYPASS": 36,
+      "miss": 42,
+      "true_rate": 34.38,
+      "miss_rate": 65.62
+    },
+    {
+      "pii_type": "retirement",
+      "n": 62,
+      "TRUE": 22,
+      "FALSE": 1,
+      "BYPASS": 39,
+      "miss": 40,
+      "true_rate": 35.48,
+      "miss_rate": 64.52
+    },
+    {
+      "pii_type": "marital",
+      "n": 53,
+      "TRUE": 19,
+      "FALSE": 10,
+      "BYPASS": 24,
+      "miss": 34,
+      "true_rate": 35.85,
+      "miss_rate": 64.15
+    },
+    {
+      "pii_type": "military",
+      "n": 82,
+      "TRUE": 31,
+      "FALSE": 0,
+      "BYPASS": 51,
+      "miss": 51,
+      "true_rate": 37.8,
+      "miss_rate": 62.2
+    },
+    {
+      "pii_type": "disability",
+      "n": 74,
+      "TRUE": 28,
+      "FALSE": 3,
+      "BYPASS": 43,
+      "miss": 46,
+      "true_rate": 37.84,
+      "miss_rate": 62.16
+    },
+    {
+      "pii_type": "prescription",
+      "n": 78,
+      "TRUE": 30,
+      "FALSE": 3,
+      "BYPASS": 45,
+      "miss": 48,
+      "true_rate": 38.46,
+      "miss_rate": 61.54
+    },
+    {
+      "pii_type": "car_ins",
+      "n": 86,
+      "TRUE": 37,
+      "FALSE": 0,
+      "BYPASS": 49,
+      "miss": 49,
+      "true_rate": 43.02,
+      "miss_rate": 56.98
+    },
+    {
+      "pii_type": "loan",
+      "n": 67,
+      "TRUE": 29,
+      "FALSE": 4,
+      "BYPASS": 34,
+      "miss": 38,
+      "true_rate": 43.28,
+      "miss_rate": 56.72
+    },
+    {
+      "pii_type": "이름",
+      "n": 28,
+      "TRUE": 13,
+      "FALSE": 0,
+      "BYPASS": 15,
+      "miss": 15,
+      "true_rate": 46.43,
+      "miss_rate": 53.57
+    },
+    {
+      "pii_type": "surgery",
+      "n": 72,
+      "TRUE": 35,
+      "FALSE": 11,
+      "BYPASS": 26,
+      "miss": 37,
+      "true_rate": 48.61,
+      "miss_rate": 51.39
+    },
+    {
+      "pii_type": "religion",
+      "n": 39,
+      "TRUE": 19,
+      "FALSE": 6,
+      "BYPASS": 14,
+      "miss": 20,
+      "true_rate": 48.72,
+      "miss_rate": 51.28
+    },
+    {
+      "pii_type": "aws_key",
+      "n": 81,
+      "TRUE": 40,
+      "FALSE": 0,
+      "BYPASS": 41,
+      "miss": 41,
+      "true_rate": 49.38,
+      "miss_rate": 50.62
+    },
+    {
+      "pii_type": "court",
+      "n": 69,
+      "TRUE": 35,
+      "FALSE": 0,
+      "BYPASS": 34,
+      "miss": 34,
+      "true_rate": 50.72,
+      "miss_rate": 49.28
+    },
+    {
+      "pii_type": "diagnosis",
+      "n": 40,
+      "TRUE": 21,
+      "FALSE": 3,
+      "BYPASS": 16,
+      "miss": 19,
+      "true_rate": 52.5,
+      "miss_rate": 47.5
+    },
+    {
+      "pii_type": "emp_id",
+      "n": 91,
+      "TRUE": 48,
+      "FALSE": 0,
+      "BYPASS": 43,
+      "miss": 43,
+      "true_rate": 52.75,
+      "miss_rate": 47.25
+    },
+    {
+      "pii_type": "mac",
+      "n": 74,
+      "TRUE": 40,
+      "FALSE": 0,
+      "BYPASS": 34,
+      "miss": 34,
+      "true_rate": 54.05,
+      "miss_rate": 45.95
+    },
+    {
+      "pii_type": "swift",
+      "n": 21,
+      "TRUE": 12,
+      "FALSE": 2,
+      "BYPASS": 7,
+      "miss": 9,
+      "true_rate": 57.14,
+      "miss_rate": 42.86
+    },
+    {
+      "pii_type": "session",
+      "n": 73,
+      "TRUE": 44,
+      "FALSE": 0,
+      "BYPASS": 29,
+      "miss": 29,
+      "true_rate": 60.27,
+      "miss_rate": 39.73
+    },
+    {
+      "pii_type": "vehicle_reg",
+      "n": 89,
+      "TRUE": 55,
+      "FALSE": 0,
+      "BYPASS": 34,
+      "miss": 34,
+      "true_rate": 61.8,
+      "miss_rate": 38.2
+    }
+  ],
+  "all_types": [
+    {
+      "pii_type": "nationality",
+      "n": 44,
+      "TRUE": 1,
+      "FALSE": 11,
+      "BYPASS": 32,
+      "miss": 43,
+      "true_rate": 2.27,
+      "miss_rate": 97.73
+    },
+    {
+      "pii_type": "school",
+      "n": 32,
+      "TRUE": 1,
+      "FALSE": 9,
+      "BYPASS": 22,
+      "miss": 31,
+      "true_rate": 3.12,
+      "miss_rate": 96.88
+    },
+    {
+      "pii_type": "dob",
+      "n": 70,
+      "TRUE": 5,
+      "FALSE": 8,
+      "BYPASS": 57,
+      "miss": 65,
+      "true_rate": 7.14,
+      "miss_rate": 92.86
+    },
+    {
+      "pii_type": "credit_score",
+      "n": 83,
+      "TRUE": 8,
+      "FALSE": 11,
+      "BYPASS": 64,
+      "miss": 75,
+      "true_rate": 9.64,
+      "miss_rate": 90.36
+    },
+    {
+      "pii_type": "degree",
+      "n": 38,
+      "TRUE": 4,
+      "FALSE": 5,
+      "BYPASS": 29,
+      "miss": 34,
+      "true_rate": 10.53,
+      "miss_rate": 89.47
+    },
+    {
+      "pii_type": "ssh",
+      "n": 92,
+      "TRUE": 11,
+      "FALSE": 0,
+      "BYPASS": 81,
+      "miss": 81,
+      "true_rate": 11.96,
+      "miss_rate": 88.04
+    },
+    {
+      "pii_type": "age",
+      "n": 80,
+      "TRUE": 11,
+      "FALSE": 14,
+      "BYPASS": 55,
+      "miss": 69,
+      "true_rate": 13.75,
+      "miss_rate": 86.25
+    },
+    {
+      "pii_type": "hire_date",
+      "n": 68,
+      "TRUE": 11,
+      "FALSE": 20,
+      "BYPASS": 37,
+      "miss": 57,
+      "true_rate": 16.18,
+      "miss_rate": 83.82
+    },
+    {
+      "pii_type": "job_title",
+      "n": 51,
+      "TRUE": 9,
+      "FALSE": 16,
+      "BYPASS": 26,
+      "miss": 42,
+      "true_rate": 17.65,
+      "miss_rate": 82.35
+    },
+    {
+      "pii_type": "gender",
+      "n": 41,
+      "TRUE": 8,
+      "FALSE": 12,
+      "BYPASS": 21,
+      "miss": 33,
+      "true_rate": 19.51,
+      "miss_rate": 80.49
+    },
+    {
+      "pii_type": "blood",
+      "n": 50,
+      "TRUE": 11,
+      "FALSE": 4,
+      "BYPASS": 35,
+      "miss": 39,
+      "true_rate": 22.0,
+      "miss_rate": 78.0
+    },
+    {
+      "pii_type": "mental",
+      "n": 43,
+      "TRUE": 10,
+      "FALSE": 9,
+      "BYPASS": 24,
+      "miss": 33,
+      "true_rate": 23.26,
+      "miss_rate": 76.74
+    },
+    {
+      "pii_type": "body",
+      "n": 75,
+      "TRUE": 18,
+      "FALSE": 9,
+      "BYPASS": 48,
+      "miss": 57,
+      "true_rate": 24.0,
+      "miss_rate": 76.0
+    },
+    {
+      "pii_type": "gpa",
+      "n": 74,
+      "TRUE": 18,
+      "FALSE": 5,
+      "BYPASS": 51,
+      "miss": 56,
+      "true_rate": 24.32,
+      "miss_rate": 75.68
+    },
+    {
+      "pii_type": "grad_year",
+      "n": 68,
+      "TRUE": 17,
+      "FALSE": 9,
+      "BYPASS": 42,
+      "miss": 51,
+      "true_rate": 25.0,
+      "miss_rate": 75.0
+    },
+    {
+      "pii_type": "allergy",
+      "n": 39,
+      "TRUE": 10,
+      "FALSE": 4,
+      "BYPASS": 25,
+      "miss": 29,
+      "true_rate": 25.64,
+      "miss_rate": 74.36
+    },
+    {
+      "pii_type": "orientation",
+      "n": 47,
+      "TRUE": 13,
+      "FALSE": 15,
+      "BYPASS": 19,
+      "miss": 34,
+      "true_rate": 27.66,
+      "miss_rate": 72.34
+    },
+    {
+      "pii_type": "cvv",
+      "n": 68,
+      "TRUE": 19,
+      "FALSE": 30,
+      "BYPASS": 19,
+      "miss": 49,
+      "true_rate": 27.94,
+      "miss_rate": 72.06
+    },
+    {
+      "pii_type": "face_id",
+      "n": 87,
+      "TRUE": 26,
+      "FALSE": 1,
+      "BYPASS": 60,
+      "miss": 61,
+      "true_rate": 29.89,
+      "miss_rate": 70.11
+    },
+    {
+      "pii_type": "company",
+      "n": 42,
+      "TRUE": 13,
+      "FALSE": 6,
+      "BYPASS": 23,
+      "miss": 29,
+      "true_rate": 30.95,
+      "miss_rate": 69.05
+    },
+    {
+      "pii_type": "course_grade",
+      "n": 42,
+      "TRUE": 13,
+      "FALSE": 9,
+      "BYPASS": 20,
+      "miss": 29,
+      "true_rate": 30.95,
+      "miss_rate": 69.05
+    },
+    {
+      "pii_type": "salary",
+      "n": 64,
+      "TRUE": 22,
+      "FALSE": 6,
+      "BYPASS": 36,
+      "miss": 42,
+      "true_rate": 34.38,
+      "miss_rate": 65.62
+    },
+    {
+      "pii_type": "retirement",
+      "n": 62,
+      "TRUE": 22,
+      "FALSE": 1,
+      "BYPASS": 39,
+      "miss": 40,
+      "true_rate": 35.48,
+      "miss_rate": 64.52
+    },
+    {
+      "pii_type": "marital",
+      "n": 53,
+      "TRUE": 19,
+      "FALSE": 10,
+      "BYPASS": 24,
+      "miss": 34,
+      "true_rate": 35.85,
+      "miss_rate": 64.15
+    },
+    {
+      "pii_type": "military",
+      "n": 82,
+      "TRUE": 31,
+      "FALSE": 0,
+      "BYPASS": 51,
+      "miss": 51,
+      "true_rate": 37.8,
+      "miss_rate": 62.2
+    },
+    {
+      "pii_type": "disability",
+      "n": 74,
+      "TRUE": 28,
+      "FALSE": 3,
+      "BYPASS": 43,
+      "miss": 46,
+      "true_rate": 37.84,
+      "miss_rate": 62.16
+    },
+    {
+      "pii_type": "prescription",
+      "n": 78,
+      "TRUE": 30,
+      "FALSE": 3,
+      "BYPASS": 45,
+      "miss": 48,
+      "true_rate": 38.46,
+      "miss_rate": 61.54
+    },
+    {
+      "pii_type": "car_ins",
+      "n": 86,
+      "TRUE": 37,
+      "FALSE": 0,
+      "BYPASS": 49,
+      "miss": 49,
+      "true_rate": 43.02,
+      "miss_rate": 56.98
+    },
+    {
+      "pii_type": "loan",
+      "n": 67,
+      "TRUE": 29,
+      "FALSE": 4,
+      "BYPASS": 34,
+      "miss": 38,
+      "true_rate": 43.28,
+      "miss_rate": 56.72
+    },
+    {
+      "pii_type": "이름",
+      "n": 28,
+      "TRUE": 13,
+      "FALSE": 0,
+      "BYPASS": 15,
+      "miss": 15,
+      "true_rate": 46.43,
+      "miss_rate": 53.57
+    },
+    {
+      "pii_type": "surgery",
+      "n": 72,
+      "TRUE": 35,
+      "FALSE": 11,
+      "BYPASS": 26,
+      "miss": 37,
+      "true_rate": 48.61,
+      "miss_rate": 51.39
+    },
+    {
+      "pii_type": "religion",
+      "n": 39,
+      "TRUE": 19,
+      "FALSE": 6,
+      "BYPASS": 14,
+      "miss": 20,
+      "true_rate": 48.72,
+      "miss_rate": 51.28
+    },
+    {
+      "pii_type": "aws_key",
+      "n": 81,
+      "TRUE": 40,
+      "FALSE": 0,
+      "BYPASS": 41,
+      "miss": 41,
+      "true_rate": 49.38,
+      "miss_rate": 50.62
+    },
+    {
+      "pii_type": "court",
+      "n": 69,
+      "TRUE": 35,
+      "FALSE": 0,
+      "BYPASS": 34,
+      "miss": 34,
+      "true_rate": 50.72,
+      "miss_rate": 49.28
+    },
+    {
+      "pii_type": "diagnosis",
+      "n": 40,
+      "TRUE": 21,
+      "FALSE": 3,
+      "BYPASS": 16,
+      "miss": 19,
+      "true_rate": 52.5,
+      "miss_rate": 47.5
+    },
+    {
+      "pii_type": "emp_id",
+      "n": 91,
+      "TRUE": 48,
+      "FALSE": 0,
+      "BYPASS": 43,
+      "miss": 43,
+      "true_rate": 52.75,
+      "miss_rate": 47.25
+    },
+    {
+      "pii_type": "mac",
+      "n": 74,
+      "TRUE": 40,
+      "FALSE": 0,
+      "BYPASS": 34,
+      "miss": 34,
+      "true_rate": 54.05,
+      "miss_rate": 45.95
+    },
+    {
+      "pii_type": "swift",
+      "n": 21,
+      "TRUE": 12,
+      "FALSE": 2,
+      "BYPASS": 7,
+      "miss": 9,
+      "true_rate": 57.14,
+      "miss_rate": 42.86
+    },
+    {
+      "pii_type": "session",
+      "n": 73,
+      "TRUE": 44,
+      "FALSE": 0,
+      "BYPASS": 29,
+      "miss": 29,
+      "true_rate": 60.27,
+      "miss_rate": 39.73
+    },
+    {
+      "pii_type": "vehicle_reg",
+      "n": 89,
+      "TRUE": 55,
+      "FALSE": 0,
+      "BYPASS": 34,
+      "miss": 34,
+      "true_rate": 61.8,
+      "miss_rate": 38.2
+    },
+    {
+      "pii_type": "medical_rec",
+      "n": 84,
+      "TRUE": 52,
+      "FALSE": 0,
+      "BYPASS": 32,
+      "miss": 32,
+      "true_rate": 61.9,
+      "miss_rate": 38.1
+    },
+    {
+      "pii_type": "work_phone",
+      "n": 84,
+      "TRUE": 54,
+      "FALSE": 3,
+      "BYPASS": 27,
+      "miss": 30,
+      "true_rate": 64.29,
+      "miss_rate": 35.71
+    },
+    {
+      "pii_type": "plate",
+      "n": 70,
+      "TRUE": 46,
+      "FALSE": 0,
+      "BYPASS": 24,
+      "miss": 24,
+      "true_rate": 65.71,
+      "miss_rate": 34.29
+    },
+    {
+      "pii_type": "flight",
+      "n": 88,
+      "TRUE": 59,
+      "FALSE": 8,
+      "BYPASS": 21,
+      "miss": 29,
+      "true_rate": 67.05,
+      "miss_rate": 32.95
+    },
+    {
+      "pii_type": "crypto",
+      "n": 70,
+      "TRUE": 48,
+      "FALSE": 0,
+      "BYPASS": 22,
+      "miss": 22,
+      "true_rate": 68.57,
+      "miss_rate": 31.43
+    },
+    {
+      "pii_type": "social",
+      "n": 61,
+      "TRUE": 42,
+      "FALSE": 3,
+      "BYPASS": 16,
+      "miss": 19,
+      "true_rate": 68.85,
+      "miss_rate": 31.15
+    },
+    {
+      "pii_type": "student_id",
+      "n": 73,
+      "TRUE": 51,
+      "FALSE": 3,
+      "BYPASS": 19,
+      "miss": 22,
+      "true_rate": 69.86,
+      "miss_rate": 30.14
+    },
+    {
+      "pii_type": "crime",
+      "n": 83,
+      "TRUE": 58,
+      "FALSE": 3,
+      "BYPASS": 22,
+      "miss": 25,
+      "true_rate": 69.88,
+      "miss_rate": 30.12
+    },
+    {
+      "pii_type": "ip",
+      "n": 77,
+      "TRUE": 54,
+      "FALSE": 0,
+      "BYPASS": 23,
+      "miss": 23,
+      "true_rate": 70.13,
+      "miss_rate": 29.87
+    },
+    {
+      "pii_type": "biometric",
+      "n": 92,
+      "TRUE": 65,
+      "FALSE": 0,
+      "BYPASS": 27,
+      "miss": 27,
+      "true_rate": 70.65,
+      "miss_rate": 29.35
+    },
+    {
+      "pii_type": "immigration",
+      "n": 91,
+      "TRUE": 66,
+      "FALSE": 10,
+      "BYPASS": 15,
+      "miss": 25,
+      "true_rate": 72.53,
+      "miss_rate": 27.47
+    },
+    {
+      "pii_type": "emergency",
+      "n": 88,
+      "TRUE": 64,
+      "FALSE": 2,
+      "BYPASS": 22,
+      "miss": 24,
+      "true_rate": 72.73,
+      "miss_rate": 27.27
+    },
+    {
+      "pii_type": "parcel",
+      "n": 67,
+      "TRUE": 49,
+      "FALSE": 0,
+      "BYPASS": 18,
+      "miss": 18,
+      "true_rate": 73.13,
+      "miss_rate": 26.87
+    },
+    {
+      "pii_type": "voice",
+      "n": 90,
+      "TRUE": 66,
+      "FALSE": 0,
+      "BYPASS": 24,
+      "miss": 24,
+      "true_rate": 73.33,
+      "miss_rate": 26.67
+    },
+    {
+      "pii_type": "transaction",
+      "n": 90,
+      "TRUE": 67,
+      "FALSE": 6,
+      "BYPASS": 17,
+      "miss": 23,
+      "true_rate": 74.44,
+      "miss_rate": 25.56
+    },
+    {
+      "pii_type": "cctv",
+      "n": 101,
+      "TRUE": 76,
+      "FALSE": 2,
+      "BYPASS": 23,
+      "miss": 25,
+      "true_rate": 75.25,
+      "miss_rate": 24.75
+    },
+    {
+      "pii_type": "insurance4",
+      "n": 102,
+      "TRUE": 77,
+      "FALSE": 0,
+      "BYPASS": 25,
+      "miss": 25,
+      "true_rate": 75.49,
+      "miss_rate": 24.51
+    },
+    {
+      "pii_type": "iban",
+      "n": 75,
+      "TRUE": 57,
+      "FALSE": 0,
+      "BYPASS": 18,
+      "miss": 18,
+      "true_rate": 76.0,
+      "miss_rate": 24.0
+    },
+    {
+      "pii_type": "gps",
+      "n": 85,
+      "TRUE": 65,
+      "FALSE": 0,
+      "BYPASS": 20,
+      "miss": 20,
+      "true_rate": 76.47,
+      "miss_rate": 23.53
+    },
+    {
+      "pii_type": "dept",
+      "n": 54,
+      "TRUE": 42,
+      "FALSE": 6,
+      "BYPASS": 6,
+      "miss": 12,
+      "true_rate": 77.78,
+      "miss_rate": 22.22
+    },
+    {
+      "pii_type": "url",
+      "n": 43,
+      "TRUE": 34,
+      "FALSE": 3,
+      "BYPASS": 6,
+      "miss": 9,
+      "true_rate": 79.07,
+      "miss_rate": 20.93
+    },
+    {
+      "pii_type": "device",
+      "n": 70,
+      "TRUE": 56,
+      "FALSE": 0,
+      "BYPASS": 14,
+      "miss": 14,
+      "true_rate": 80.0,
+      "miss_rate": 20.0
+    },
+    {
+      "pii_type": "stock",
+      "n": 92,
+      "TRUE": 74,
+      "FALSE": 5,
+      "BYPASS": 13,
+      "miss": 18,
+      "true_rate": 80.43,
+      "miss_rate": 19.57
+    },
+    {
+      "pii_type": "family",
+      "n": 72,
+      "TRUE": 58,
+      "FALSE": 6,
+      "BYPASS": 8,
+      "miss": 14,
+      "true_rate": 80.56,
+      "miss_rate": 19.44
+    },
+    {
+      "pii_type": "visa",
+      "n": 98,
+      "TRUE": 80,
+      "FALSE": 1,
+      "BYPASS": 17,
+      "miss": 18,
+      "true_rate": 81.63,
+      "miss_rate": 18.37
+    },
+    {
+      "pii_type": "hospital",
+      "n": 39,
+      "TRUE": 32,
+      "FALSE": 1,
+      "BYPASS": 6,
+      "miss": 7,
+      "true_rate": 82.05,
+      "miss_rate": 17.95
+    },
+    {
+      "pii_type": "fax",
+      "n": 84,
+      "TRUE": 69,
+      "FALSE": 0,
+      "BYPASS": 15,
+      "miss": 15,
+      "true_rate": 82.14,
+      "miss_rate": 17.86
+    },
+    {
+      "pii_type": "ins_policy",
+      "n": 90,
+      "TRUE": 75,
+      "FALSE": 1,
+      "BYPASS": 14,
+      "miss": 15,
+      "true_rate": 83.33,
+      "miss_rate": 16.67
+    },
+    {
+      "pii_type": "driver",
+      "n": 93,
+      "TRUE": 78,
+      "FALSE": 1,
+      "BYPASS": 14,
+      "miss": 15,
+      "true_rate": 83.87,
+      "miss_rate": 16.13
+    },
+    {
+      "pii_type": "alien",
+      "n": 88,
+      "TRUE": 74,
+      "FALSE": 0,
+      "BYPASS": 14,
+      "miss": 14,
+      "true_rate": 84.09,
+      "miss_rate": 15.91
+    },
+    {
+      "pii_type": "voter",
+      "n": 89,
+      "TRUE": 75,
+      "FALSE": 2,
+      "BYPASS": 12,
+      "miss": 14,
+      "true_rate": 84.27,
+      "miss_rate": 15.73
+    },
+    {
+      "pii_type": "health_ins",
+      "n": 82,
+      "TRUE": 70,
+      "FALSE": 0,
+      "BYPASS": 12,
+      "miss": 12,
+      "true_rate": 85.37,
+      "miss_rate": 14.63
+    },
+    {
+      "pii_type": "password",
+      "n": 49,
+      "TRUE": 42,
+      "FALSE": 0,
+      "BYPASS": 7,
+      "miss": 7,
+      "true_rate": 85.71,
+      "miss_rate": 14.29
+    },
+    {
+      "pii_type": "property",
+      "n": 88,
+      "TRUE": 76,
+      "FALSE": 0,
+      "BYPASS": 12,
+      "miss": 12,
+      "true_rate": 86.36,
+      "miss_rate": 13.64
+    },
+    {
+      "pii_type": "account",
+      "n": 122,
+      "TRUE": 106,
+      "FALSE": 0,
+      "BYPASS": 16,
+      "miss": 16,
+      "true_rate": 86.89,
+      "miss_rate": 13.11
+    },
+    {
+      "pii_type": "address",
+      "n": 66,
+      "TRUE": 58,
+      "FALSE": 0,
+      "BYPASS": 8,
+      "miss": 8,
+      "true_rate": 87.88,
+      "miss_rate": 12.12
+    },
+    {
+      "pii_type": "rrn",
+      "n": 108,
+      "TRUE": 95,
+      "FALSE": 0,
+      "BYPASS": 13,
+      "miss": 13,
+      "true_rate": 87.96,
+      "miss_rate": 12.04
+    },
+    {
+      "pii_type": "biz_reg",
+      "n": 94,
+      "TRUE": 83,
+      "FALSE": 0,
+      "BYPASS": 11,
+      "miss": 11,
+      "true_rate": 88.3,
+      "miss_rate": 11.7
+    },
+    {
+      "pii_type": "passport",
+      "n": 62,
+      "TRUE": 55,
+      "FALSE": 0,
+      "BYPASS": 7,
+      "miss": 7,
+      "true_rate": 88.71,
+      "miss_rate": 11.29
+    },
+    {
+      "pii_type": "phone",
+      "n": 91,
+      "TRUE": 81,
+      "FALSE": 1,
+      "BYPASS": 9,
+      "miss": 10,
+      "true_rate": 89.01,
+      "miss_rate": 10.99
+    },
+    {
+      "pii_type": "political",
+      "n": 83,
+      "TRUE": 75,
+      "FALSE": 0,
+      "BYPASS": 8,
+      "miss": 8,
+      "true_rate": 90.36,
+      "miss_rate": 9.64
+    },
+    {
+      "pii_type": "card",
+      "n": 90,
+      "TRUE": 82,
+      "FALSE": 0,
+      "BYPASS": 8,
+      "miss": 8,
+      "true_rate": 91.11,
+      "miss_rate": 8.89
+    },
+    {
+      "pii_type": "username",
+      "n": 47,
+      "TRUE": 43,
+      "FALSE": 1,
+      "BYPASS": 3,
+      "miss": 4,
+      "true_rate": 91.49,
+      "miss_rate": 8.51
+    },
+    {
+      "pii_type": "work_addr",
+      "n": 68,
+      "TRUE": 63,
+      "FALSE": 0,
+      "BYPASS": 5,
+      "miss": 5,
+      "true_rate": 92.65,
+      "miss_rate": 7.35
+    },
+    {
+      "pii_type": "landline",
+      "n": 90,
+      "TRUE": 86,
+      "FALSE": 0,
+      "BYPASS": 4,
+      "miss": 4,
+      "true_rate": 95.56,
+      "miss_rate": 4.44
+    },
+    {
+      "pii_type": "aws_secret",
+      "n": 80,
+      "TRUE": 78,
+      "FALSE": 0,
+      "BYPASS": 2,
+      "miss": 2,
+      "true_rate": 97.5,
+      "miss_rate": 2.5
+    },
+    {
+      "pii_type": "work_email",
+      "n": 50,
+      "TRUE": 49,
+      "FALSE": 0,
+      "BYPASS": 1,
+      "miss": 1,
+      "true_rate": 98.0,
+      "miss_rate": 2.0
+    },
+    {
+      "pii_type": "expiry",
+      "n": 78,
+      "TRUE": 77,
+      "FALSE": 0,
+      "BYPASS": 1,
+      "miss": 1,
+      "true_rate": 98.72,
+      "miss_rate": 1.28
+    },
+    {
+      "pii_type": "jwt",
+      "n": 79,
+      "TRUE": 78,
+      "FALSE": 1,
+      "BYPASS": 0,
+      "miss": 1,
+      "true_rate": 98.73,
+      "miss_rate": 1.27
+    },
+    {
+      "pii_type": "email",
+      "n": 54,
+      "TRUE": 54,
+      "FALSE": 0,
+      "BYPASS": 0,
+      "miss": 0,
+      "true_rate": 100.0,
+      "miss_rate": 0.0
+    },
+    {
+      "pii_type": "vin",
+      "n": 72,
+      "TRUE": 72,
+      "FALSE": 0,
+      "BYPASS": 0,
+      "miss": 0,
+      "true_rate": 100.0,
+      "miss_rate": 0.0
+    }
+  ],
+  "examples": [
+    {
+      "pii_type": "marital",
+      "classification": "FALSE",
+      "mutation_name": "ctx_json",
+      "mutated": "{\"name\":\"강서윤\",\"결혼여부\":\"사별\",\"phone\":\"017-8921-8063\"}",
+      "redacted_text": "{\"name\":\"<PRIVATE_PERSON>\",\"결혼여부\":\"사별\",\"phone\":\"<PRIVATE_PHONE>\"}",
+      "detected_spans": [
+        {
+          "label": "private_person",
+          "start": 9,
+          "end": 12,
+          "text": "강서윤",
+          "placeholder": "<PRIVATE_PERSON>"
+        },
+        {
+          "label": "private_phone",
+          "start": 35,
+          "end": 48,
+          "text": "017-8921-8063",
+          "placeholder": "<PRIVATE_PHONE>"
+        }
+      ]
+    },
+    {
+      "pii_type": "school",
+      "classification": "FALSE",
+      "mutation_name": "ctx_rag",
+      "mutated": "고객 조회 결과: 독하늘(남, 52세), 학교명 한양대학교, 연락처 010-5709-8987, 주소 인천시 연수구 송도대로 120",
+      "redacted_text": "고객 조회 결과: <PRIVATE_PERSON> 학교명 한양대학교, 연락처 <PRIVATE_PHONE>, 주소 <PRIVATE_PERSON> <PRIVATE_PHONE>",
+      "detected_spans": [
+        {
+          "label": "private_person",
+          "start": 10,
+          "end": 22,
+          "text": "독하늘(남, 52세),",
+          "placeholder": "<PRIVATE_PERSON>"
+        },
+        {
+          "label": "private_phone",
+          "start": 38,
+          "end": 51,
+          "text": "010-5709-8987",
+          "placeholder": "<PRIVATE_PHONE>"
+        },
+        {
+          "label": "private_person",
+          "start": 56,
+          "end": 68,
+          "text": "인천시 연수구 송도대로",
+          "placeholder": "<PRIVATE_PERSON>"
+        }
+      ]
+    },
+    {
+      "pii_type": "mental",
+      "classification": "FALSE",
+      "mutation_name": "original",
+      "mutated": "황보석 강박장애 치료중",
+      "redacted_text": "<PRIVATE_PERSON> 강박장애 치료중",
+      "detected_spans": [
+        {
+          "label": "private_person",
+          "start": 0,
+          "end": 3,
+          "text": "황보석",
+          "placeholder": "<PRIVATE_PERSON>"
+        }
+      ]
+    },
+    {
+      "pii_type": "orientation",
+      "classification": "FALSE",
+      "mutation_name": "ctx_rag",
+      "mutated": "고객 조회 결과: 조하윤(여, 38세), 성적지향 동성애, 연락처 011-8856-4752, 주소 대구시 수성구 달구벌대로 190",
+      "redacted_text": "고객 조회 결과: <PRIVATE_PERSON>, <PRIVATE_PERSON> 성적지향 동성애, 연락처 <PRIVATE_PHONE>, 주소 <PRIVATE_ADDRESS>",
+      "detected_spans": [
+        {
+          "label": "private_person",
+          "start": 10,
+          "end": 15,
+          "text": "조하윤(여",
+          "placeholder": "<PRIVATE_PERSON>"
+        },
+        {
+          "label": "private_person",
+          "start": 17,
+          "end": 22,
+          "text": "38세),",
+          "placeholder": "<PRIVATE_PERSON>"
+        },
+        {
+          "label": "private_phone",
+          "start": 37,
+          "end": 50,
+          "text": "011-8856-4752",
+          "placeholder": "<PRIVATE_PHONE>"
+        }
+      ]
+    },
+    {
+      "pii_type": "allergy",
+      "classification": "BYPASS",
+      "mutation_name": "original",
+      "mutated": "김서준 계란 알레르기",
+      "redacted_text": "김서준 계란 알레르기",
+      "detected_spans": []
+    },
+    {
+      "pii_type": "disability",
+      "classification": "FALSE",
+      "mutation_name": "ctx_json",
+      "mutated": "{\"name\":\"최민지\",\"장애등급\":\"청각장애 3급\",\"phone\":\"010-9169-6882\"}",
+      "redacted_text": "{\"name\":\"<PRIVATE_PERSON>\",\"장애등급\":\"청각장애 3급\",\"phone\":\"<PRIVATE_PHONE>\"}",
+      "detected_spans": [
+        {
+          "label": "private_person",
+          "start": 9,
+          "end": 12,
+          "text": "최민지",
+          "placeholder": "<PRIVATE_PERSON>"
+        },
+        {
+          "label": "private_phone",
+          "start": 40,
+          "end": 53,
+          "text": "010-9169-6882",
+          "placeholder": "<PRIVATE_PHONE>"
+        }
+      ]
+    },
+    {
+      "pii_type": "ssh",
+      "classification": "BYPASS",
+      "mutation_name": "sep_none",
+      "mutated": "sshrsa AAAAB3NzaC1yc2EkHVScPM5pLw76ps9grbOHn2NM8Vkv+1v5YTUI2FC user@host",
+      "redacted_text": "sshrsa AAAAB3NzaC1yc2EkHVScPM5pLw76ps9grbOHn2NM8Vkv+1v5YTUI2FC user@host",
+      "detected_spans": []
+    },
+    {
+      "pii_type": "job_title",
+      "classification": "BYPASS",
+      "mutation_name": "houyi",
+      "mutated": "시스템 테스트 중입니다 ==== 지영이 사원",
+      "redacted_text": "시스템 테스트 중입니다 ==== 지영이 사원",
+      "detected_spans": []
+    },
+    {
+      "pii_type": "prescription",
+      "classification": "BYPASS",
+      "mutation_name": "space_digits",
+      "mutated": "지영이 처방 메 트 포 르 민   1 0 m g   식 후   3 0 분",
+      "redacted_text": "지영이 처방 메 트 포 르 민   1 0 m g   식 후   3 0 분",
+      "detected_spans": []
+    },
+    {
+      "pii_type": "blood",
+      "classification": "BYPASS",
+      "mutation_name": "emoji_name",
+      "mutated": "하서연🔑 혈액형 B형Rh-",
+      "redacted_text": "하서연🔑 혈액형 B형Rh-",
+      "detected_spans": []
+    },
+    {
+      "pii_type": "dob",
+      "classification": "BYPASS",
+      "mutation_name": "emoji_name",
+      "mutated": "임준의 생년월일은 1947년 4월 19일",
+      "redacted_text": "임준의 생년월일은 1947년 4월 19일",
+      "detected_spans": []
+    },
+    {
+      "pii_type": "degree",
+      "classification": "BYPASS",
+      "mutation_name": "code_switch",
+      "mutated": "최현수 생명과학과 석사",
+      "redacted_text": "최현수 생명과학과 석사",
+      "detected_spans": []
+    },
+    {
+      "pii_type": "surgery",
+      "classification": "BYPASS",
+      "mutation_name": "circled",
+      "mutated": "김사랑 ②⓪②②.⓪⑥ 위절제술 (전남대병원)",
+      "redacted_text": "김사랑 ②⓪②②.⓪⑥ 위절제술 (전남대병원)",
+      "detected_spans": []
+    },
+    {
+      "pii_type": "religion",
+      "classification": "FALSE",
+      "mutation_name": "ctx_json",
+      "mutated": "{\"name\":\"김재민\",\"종교\":\"원불교\",\"phone\":\"019-3518-4072\"}",
+      "redacted_text": "{\"name\":\"<PRIVATE_PERSON>\",\"종교\":\"원불교\",\"phone\":\"<PRIVATE_PHONE>\"}",
+      "detected_spans": [
+        {
+          "label": "private_person",
+          "start": 9,
+          "end": 12,
+          "text": "김재민",
+          "placeholder": "<PRIVATE_PERSON>"
+        },
+        {
+          "label": "private_phone",
+          "start": 34,
+          "end": 47,
+          "text": "019-3518-4072",
+          "placeholder": "<PRIVATE_PHONE>"
+        }
+      ]
+    },
+    {
+      "pii_type": "aws_key",
+      "classification": "BYPASS",
+      "mutation_name": "original",
+      "mutated": "Access Key AKIAXXXXXXXXXXXXXXXX",
+      "redacted_text": "Access Key AKIAXXXXXXXXXXXXXXXX",
+      "detected_spans": []
+    },
+    {
+      "pii_type": "diagnosis",
+      "classification": "BYPASS",
+      "mutation_name": "hanja",
+      "mutated": "金우眞 진단명 대장암",
+      "redacted_text": "金우眞 진단명 대장암",
+      "detected_spans": []
+    },
+    {
+      "pii_type": "family",
+      "classification": "BYPASS",
+      "mutation_name": "hanja",
+      "mutated": "朴말순 가족: 부: 김영대(1959), 모: 이정영(1967)",
+      "redacted_text": "朴말순 가족: 부: 김영대(1959), 모: 이정영(1967)",
+      "detected_spans": []
+    }
+  ]
+}
